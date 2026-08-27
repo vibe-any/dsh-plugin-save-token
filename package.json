@@ -1,0 +1,58 @@
+{
+  "name": "dsh-plugin-save-token",
+  "version": "2.1.2",
+  "description": "Cut token cost without cutting model intelligence — a DeepSeek Harness (dsh) bundle plugin: structure-aware compression + TOON-style lossless encoding first + reversible spill-to-disk + real-time dashboard.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibe-any/dsh-plugin-save-token.git"
+  },
+  "homepage": "https://github.com/vibe-any/dsh-plugin-save-token#readme",
+  "bugs": {
+    "url": "https://github.com/vibe-any/dsh-plugin-save-token/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "cordis",
+    "token-optimization",
+    "llm",
+    "context-compression",
+    "toon"
+  ],
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "react": "^18.3.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

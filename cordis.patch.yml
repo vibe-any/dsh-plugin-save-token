@@ -1,0 +1,32 @@
+# dsh-plugin-save-token bundle patch: inserts the save-token plugin row into
+# the web profile roster (applied as a profile bundle layer through the
+# `dsh.bundle.patch` manifest field). Install with:
+#
+#   dsh plugin --profile web add github:vibe-any/dsh-plugin-save-token
+#
+# The row references the package by name: the node half (exports ".") runs in
+# the host process (waterfall hooks / tools / API routes), and the
+# `exports["./client"]` entry makes the browser half load in the web GUI.
+# `config` below restates every owned key so later layers can override
+# individual values while keeping this bundle first in the stack.
+- insert:
+    - id: save-token
+      name: dsh-plugin-save-token
+      config:
+        compressEnabled: true
+        dedupeEnabled: true
+        minBytes: 1400
+        errorMinBytes: 6000
+        minSavingBytes: 500
+        keepRatioMax: 0.72
+        maxLines: 240
+        headLines: 140
+        tailLines: 80
+        tabularHeadRows: 60
+        tabularTailRows: 40
+        tabularStrideSamples: 50
+        longLineChars: 420
+        jsonMaxParseBytes: 524288
+        dedupeTtlMs: 90000
+        compactBudgetTokens: 120000
+        compactCooldownMs: 600000
