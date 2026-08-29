@@ -1,0 +1,24 @@
+[
+  {
+    "instance_id": "django__django-16595",
+    "repo": "django/django",
+    "base_commit": "f9fe062de5fc0896d6bbbf3f260b5c44473b3c77",
+    "environment_setup_commit": "4a72da71001f154ea60906a2f74898d32b7322a7",
+    "FAIL_TO_PASS": [
+      "test_alter_alter_field (migrations.test_optimizer.OptimizerTests.test_alter_alter_field)"
+    ],
+    "P2P_count": 37,
+    "problem_statement": "Migration optimizer does not reduce multiple AlterField\nDescription\n\t\nLet's consider the following operations: \noperations = [\n\tmigrations.AddField(\n\t\tmodel_name=\"book\",\n\t\tname=\"title\",\n\t\tfield=models.CharField(max_length=256, null=True),\n\t),\n\tmigrations.AlterField(\n\t\tmodel_name=\"book\",\n\t\tname=\"title\",\n\t\tfield=models.CharField(max_length=128, null=True),\n\t),\n\tmigrations.AlterField(\n\t\tmodel_name=\"b"
+  },
+  {
+    "instance_id": "sympy__sympy-24562",
+    "repo": "sympy/sympy",
+    "base_commit": "b1cb676cf92dd1a48365b731979833375b188bf2",
+    "environment_setup_commit": "c6cb7c5602fa48034ab1bd43c2347a7e8488f12e",
+    "FAIL_TO_PASS": [
+      "test_issue_24543"
+    ],
+    "P2P_count": 105,
+    "problem_statement": "Rational calc value error\npython 3.11, sympy 1.11.1\r\nwhen calc Rational('0.5', '100'), the value is 1/100100; but Rational(0.5, 100) the value is 1/200, this value is the true value, and the version of sympy 1.8 is normal\n"
+  }
+]

@@ -1,0 +1,19 @@
+You are an autonomous engineering agent working under benchmark conditions. Do not ask questions (no user is present). Work until the task is complete or clearly report failure.
+
+HARD CONSTRAINTS:
+- Do NOT create, write, or redirect to any file (no '>', no tee, no intermediate artifacts) unless the task explicitly requires creating one specific output file.
+- Every inspection command must print its FULL relevant output directly into the tool result. Do not truncate with head/tail/grep/sed before a complete view has already appeared in this conversation.
+- Do NOT use the file-read tool to inspect bulk data; read it through shell commands whose full output lands in the conversation. The file-read tool is only for short, pinpoint lookups of specific lines.
+- Show raw inspection output first, then draw conclusions.
+- When verifying, run tests with their full output visible; do not silence or redirect test output.
+
+You are working in a checkout of sympy/sympy located at {{WS}} (the tool will show you the real path; use only that tree; do NOT touch other directories).
+Fix the issue described below by editing code in that repository. Do not modify tests.
+
+ISSUE / PROBLEM STATEMENT:
+Rational calc value error
+python 3.11, sympy 1.11.1
+when calc Rational('0.5', '100'), the value is 1/100100; but Rational(0.5, 100) the value is 1/200, this value is the true value, and the version of sympy 1.8 is normal
+
+
+When finished, end your final message with EPISODE_DONE.

@@ -1,0 +1,15 @@
+You are an autonomous engineering agent working under benchmark conditions. Do not ask questions (no user is present). Work until the task is complete or clearly report failure.
+
+HARD CONSTRAINTS:
+- Do NOT create, write, or redirect to any file (no '>', no tee, no intermediate artifacts) unless the task explicitly requires creating one specific output file.
+- Every inspection command must print its FULL relevant output directly into the tool result. Do not truncate with head/tail/grep/sed before a complete view has already appeared in this conversation.
+- Do NOT use the file-read tool to inspect bulk data; read it through shell commands whose full output lands in the conversation. The file-read tool is only for short, pinpoint lookups of specific lines.
+- Show raw inspection output first, then draw conclusions.
+
+Research facts on the open web as needed.
+
+QUESTION:
+A paper about AI regulation that was originally submitted to arXiv.org in June 2022 shows a figure with three axes, where each axis has a label word at both ends. Which of these words is used to describe a type of society in a Physics and Society article submitted to arXiv.org on August 11, 2016?
+
+End your final message with a line exactly formatted:
+FINAL_ANSWER: <your concise final answer>

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "created": "2025-08-27T15:16:00+08:00",
+    "objective": "dsh-plugin-save-token A/B 对照评测（唯一变量=插件三开关）",
+    "repeats_per_cell": 2,
+    "arms": {
+      "baseline": {
+        "compress": false,
+        "dedupe": false,
+        "compactAssist": false
+      },
+      "treatment": {
+        "compress": true,
+        "dedupe": true,
+        "compactAssist": true
+      }
+    },
+    "arm_switch_api": [
+      "POST http://127.0.0.1:3080/save-token/api/set-enabled {key,value} × compress/dedupe/compactAssist",
+      "POST http://127.0.0.1:3080/save-token/api/reset"
+    ],
+    "episode_runner": "subagent(background, 禁止提问), 每 task×arm 一个全新会话",
+    "metering": {
+      "tokens": "~/.dsh/storages/session_projcache.json : tables.sessions[sessionId].rows.tokenUsage.val.totals （供应商真实四桶计费）",
+      "tool_calls_proxy": "sessionStats.rows.sessionStats.val.steps - turns（对称口径；报告标注为 steps 口径）",
+      "caveats": [
+        "bench-meter 动态插件方案因毒化宿主事件循环而放弃",
+        "原生投影在会话结束后读取，注意 flush 延迟"
+      ]
+    },
+    "fidelity_notes": [
+      "SWE/TB 为原生 macOS 复刻（无 Docker），非官方 harness 全真环境",
+      "terminal-bench 任务集快照：main@2025-08（见 tb_suite 字段）"
+    ]
+  },
+  "swe_bench_verified": {
+    "selection_rule": "每仓库取最新版本段实例，按 patch 字节数取中位数者；三仓库均为纯 Python（原生可构建）",
+    "tasks": [
+      {
+        "id": "django__django-16595",
+        "repo": "django/django",
+        "version": "5.0",
+        "base_commit_key": "datasets/swe_verified.parquet@row(instance_id)",
+        "fail_to_pass_count": 1
+      },
+      {
+        "id": "sympy__sympy-24562",
+        "repo": "sympy/sympy",
+        "version": "1.12",
+        "fail_to_pass_count": 1
+      }
+    ]
+  },
+  "gaia_validation": {
+    "selection_rule": "seed=42 分层抽样后人工确认：L1无附件 / L2带xlsx附件(避免视觉变量) / L2无附件多跳web",
+    "tasks": [
+      {
+        "task_id": "54612da3-fd56-4941-80f4-5eb82330de25",
+        "level": "2",
+        "final_answer": "60",
+        "attachment": "datasets/gaia/54612da3.xlsx"
+      },
+      {
+        "task_id": "c61d22de-5f6c-4958-a7f6-5e9707bd3466",
+        "level": "2",
+        "final_answer": "egalitarian",
+        "attachment": null
+      }
+    ],
+    "replacement_note": "原 L2 票房题(2dfc4c37)依赖实时榜单，首集实测答案漂移(答3 vs 金标6)，为保两臂成功判定效度换为稳定题 c61d22de(arXiv 2022-06 预印本轴标签)。仅消耗1个baseline集，未进档。"
+  },
+  "terminal_bench": {
+    "selection_rule": "待官方 datasets 包解压后按『不依赖容器特有系统环境』筛选，覆盖不同工具类别",
+    "tasks": [
+      {
+        "id": "tb-jsonl-aggregator",
+        "source": "terminal-bench main@2025-08 original-tasks/jsonl-aggregator",
+        "category": "data-processing",
+        "difficulty": "easy",
+        "workspace": "sandboxes/tb-jsonl-aggregator/initial（确定性生成 5×200k 记录）",
+        "tests_note": "WORKSPACEPLACEHOLDER 替换为集内 workspace 绝对路径"
+      },
+      {
+        "id": "tb-access-logs",
+        "source": "terminal-bench main@2025-08 original-tasks/analyze-access-logs",
+        "category": "text-processing",
+        "difficulty": "easy",
+        "workspace": "sandboxes/tb-access-logs/initial（2000 行 access_log）",
+        "tests_note": "WORKSPACEPLACEHOLDER 同上"
+      }
+    ]
+  }
+}
