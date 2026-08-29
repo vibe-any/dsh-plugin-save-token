@@ -54,16 +54,31 @@ Every `llm/stream` is intercepted: real billed tokens (input/cached/output/reaso
 
 ---
 
-## Measured results (real scenarios)
+## Measured results
 
-| Scenario | Input | Result | Notes |
+### End-to-end A/B on real agent tasks (2026-08-29)
+
+Randomized comparison on GAIA / Terminal-Bench / SWE-bench-Verified tasks — unique variable: the plugin's compress/dedupe switches; both arms under identical constraints that force large tool output to be printed directly into the conversation. Full data, scripts and per-episode records: [`bench/`](./bench), report: [`bench/report_2026-08-29.md`](./bench/report_2026-08-29.md).
+
+| Episodes | Success rate | Total tokens | Compressions | Per-episode median |
+|---|---|---|---|---|
+| 24/24 (6 tasks × 2 arms × n=2) | **100% vs 100%** | 5.25M vs **4.32M (−17.6%)** | 16 events across 8/12 episodes | **−56%** |
+
+Take-aways: the plugin pays off exactly when large tool output lands directly in
+the context (verbose test runs, raw log/JSON dumps); when agents go through the
+write-file-then-read pattern it never triggers — and costs nothing. Success rate
+was never hurt.
+
+### Single-event compression strength
+
+| Input | Before | After | Strategy |
 |---|---|---|---|
-| CLI price table (400-line pipe table) | 41,727 B | **15,191 B (−64%)** | Verbatim head/tail + middle sampled every 7 lines with line numbers; whole-table structure visible |
+| CLI price table (400-line pipe table) | 41,727 B | **15,191 B (−64%)** | Structure-aware: verbatim head/tail + stride-sampled middle with original line numbers |
 | Model-price JSON registry (300-item uniform array) | 34,000 B | **19,935 B (−41%)** | TOON lossless route, zero information loss |
-| Real session cumulative (14 large-output events, 146,935 B) | — | Best single event **−96%** (33,184→1,317 B); worst −31% | Lossy path as fallback; even the worst case passed the double gate |
-| Anti-pattern → design motivation | A 35.5KB LiteLLM price registry once got blind head/tail windowing; subagents couldn't find middle rows and re-queried repeatedly | v2 switched to structure-aware strategy | Honestly recorded: this is why optimization #1 exists |
 
-> Figures above were measured in a development environment, not a lab benchmark; your gains depend on how much of your workload is large tool output.
+> Anti-pattern on record: an early version once applied blind head/tail windowing to a 35.5KB LiteLLM price registry; subagents couldn't locate middle rows and re-queried repeatedly — that failure is why the structure-aware strategy exists.
+
+> Single-event figures were measured in a development environment; session-level gains depend on how much of your workload is large tool output delivered directly to the model (write-file-then-read patterns bypass compression by design, at zero cost).
 
 ---
 
@@ -92,7 +107,7 @@ Removal: `dsh plugin --profile web remove dsh-plugin-save-token`.
 
 ### Using it
 
-Once installed there is nothing to operate: open **Settings → Token Saver** for the full panel, and look for the persistent live strip under the input box. Three toggles (Compress / Dedupe / Compact@120k) switch right on the panel.
+Once installed there is nothing to operate: open **Settings → Token Saver** for the full panel, and look for the persistent live strip under the input box. Three toggles (Compress / Dedupe / Compact@120k) switch right on the panel. The panel and the strip follow dsh's language setting (Settings → General → Language: English / 简体中文).
 
 ### Config defaults (the `config:` block of the `save-token` row in [cordis.patch.yml](./cordis.patch.yml); code fallbacks live in `src/index.js`)
 
