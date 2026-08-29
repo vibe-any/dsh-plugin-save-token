@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-save-token",
-  "version": "2.1.0",
+  "version": "2.1.3",
   "description": "只降 token、不降智的 DSH bundle 插件：结构感知压缩 + TOON 式无损编码优先 + 可逆落盘 + 实时 Dashboard",
   "format": "deepseek-harness (dsh) profile bundle / Cordis plugin",
   "install": "dsh plugin --profile web add dsh-plugin-save-token",
@@ -10,10 +10,21 @@
     "loaderNote": "npm 包以 `dsh.bundle.patch` 声明挂载：node 半（exports \".\"）运行在宿主进程，client 半（exports \"./client\"）经 __ModuleLoader__ 装入 Web GUI。"
   },
   "requires": {
-    "dshServices": ["spillStore (必需，可逆落盘；缺失时压缩自动关闭)", "compaction (可选，上下文压力联动)", "tools (注册 save_token_expand 动态工具)", "webServer (面板 JSON API)"],
-    "clientInject": ["slots"]
+    "dshServices": [
+      "spillStore (必需，可逆落盘；缺失时压缩自动关闭)",
+      "compaction (可选，上下文压力联动)",
+      "tools (注册 save_token_expand 动态工具)",
+      "webServer (面板 JSON API)"
+    ],
+    "clientInject": [
+      "slots"
+    ]
   },
-  "api": ["/save-token/api/dashboard", "/save-token/api/set-enabled", "/save-token/api/reset"],
+  "api": [
+    "/save-token/api/dashboard",
+    "/save-token/api/set-enabled",
+    "/save-token/api/reset"
+  ],
   "dynamicTool": "save_token_expand",
   "configDefaults": {
     "compressEnabled": true,
