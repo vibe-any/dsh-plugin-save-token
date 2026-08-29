@@ -1,0 +1,28 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-locomotives",
+ "arm": "treatment",
+ "repeat": 2,
+ "sessionId": "988e87e9-91c6-4a6a-8a2a-ce1dd5212819",
+ "usage": {
+  "uncachedInputTokens": 25418,
+  "outputTokens": 2977,
+  "cacheReadTokens": 95040,
+  "cacheWriteTokens": 0
+ },
+ "steps": 8,
+ "turns": 1,
+ "llmMs": 97783,
+ "toolMs": 919,
+ "settledMs": 99070,
+ "success": 1,
+ "note": "",
+ "missing_fields": [],
+ "usageTotalTokens": 123435,
+ "plugin": {
+  "compressionEvents": 3,
+  "dedupeHits": 0,
+  "byTool": {},
+  "avoidedTokens": 6669
+ }
+}

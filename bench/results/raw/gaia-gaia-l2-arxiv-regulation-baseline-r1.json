@@ -1,0 +1,28 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-arxiv-regulation",
+ "arm": "baseline",
+ "repeat": 1,
+ "sessionId": "4c49a1ce-42ab-4ead-af04-01333b9d8cd6",
+ "usage": {
+  "uncachedInputTokens": 22733,
+  "outputTokens": 7311,
+  "cacheReadTokens": 209280,
+  "cacheWriteTokens": 0
+ },
+ "steps": 12,
+ "turns": 1,
+ "llmMs": 203734,
+ "toolMs": 84049,
+ "settledMs": 273802,
+ "success": 1,
+ "note": "",
+ "missing_fields": [],
+ "usageTotalTokens": 239324,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "byTool": {},
+  "avoidedTokens": 0
+ }
+}

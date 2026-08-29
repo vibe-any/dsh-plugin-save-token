@@ -1,0 +1,28 @@
+{
+ "benchId": "swe",
+ "taskId": "swe-django-16595",
+ "arm": "treatment",
+ "repeat": 2,
+ "sessionId": "f7488e3a-720c-49b9-a8f9-4ec16e633f7d",
+ "usage": {
+  "uncachedInputTokens": 31753,
+  "outputTokens": 10559,
+  "cacheReadTokens": 661632,
+  "cacheWriteTokens": 0
+ },
+ "steps": 29,
+ "turns": 1,
+ "llmMs": 410018,
+ "toolMs": 313771,
+ "settledMs": 725561,
+ "success": 1,
+ "note": "",
+ "missing_fields": [],
+ "usageTotalTokens": 703944,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "byTool": {},
+  "avoidedTokens": 0
+ }
+}

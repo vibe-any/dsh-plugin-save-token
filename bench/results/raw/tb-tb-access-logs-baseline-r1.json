@@ -1,0 +1,28 @@
+{
+ "benchId": "tb",
+ "taskId": "tb-access-logs",
+ "arm": "baseline",
+ "repeat": 1,
+ "sessionId": "2da0abab-fb1a-449b-8612-24b90b6d7394",
+ "usage": {
+  "uncachedInputTokens": 25725,
+  "outputTokens": 3672,
+  "cacheReadTokens": 82944,
+  "cacheWriteTokens": 0
+ },
+ "steps": 7,
+ "turns": 1,
+ "llmMs": 139991,
+ "toolMs": 615,
+ "settledMs": 141097,
+ "success": 1,
+ "note": "",
+ "missing_fields": [],
+ "usageTotalTokens": 112341,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "byTool": {},
+  "avoidedTokens": 0
+ }
+}

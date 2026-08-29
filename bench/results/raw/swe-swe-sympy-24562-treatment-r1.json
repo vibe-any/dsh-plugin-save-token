@@ -1,0 +1,28 @@
+{
+ "benchId": "swe",
+ "taskId": "swe-sympy-24562",
+ "arm": "treatment",
+ "repeat": 1,
+ "sessionId": "9543ba0d-38ef-4d66-8930-868c29934186",
+ "usage": {
+  "uncachedInputTokens": 37996,
+  "outputTokens": 10970,
+  "cacheReadTokens": 565760,
+  "cacheWriteTokens": 0
+ },
+ "steps": 27,
+ "turns": 1,
+ "llmMs": 375277,
+ "toolMs": 108589,
+ "settledMs": 484909,
+ "success": 1,
+ "note": "",
+ "missing_fields": [],
+ "usageTotalTokens": 614726,
+ "plugin": {
+  "compressionEvents": 1,
+  "dedupeHits": 0,
+  "byTool": {},
+  "avoidedTokens": 33374
+ }
+}
