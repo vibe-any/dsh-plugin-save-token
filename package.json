@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-save-token",
-  "version": "2.1.3",
+  "version": "2.4.1",
   "description": "Cut token cost without cutting model intelligence — a DeepSeek Harness (dsh) bundle plugin: structure-aware compression + TOON-style lossless encoding first + reversible spill-to-disk + real-time dashboard.",
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,8 @@
     "README.zh-CN.md"
   ],
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "node --test"
   },
   "dsh": {
     "bundle": {
