@@ -1,0 +1,37 @@
+{
+ "benchId": "tb",
+ "taskId": "tb-jsonl-aggregator",
+ "arm": "baseline",
+ "repeat": 2,
+ "sessionId": "e49973bf-bbc4-4847-8937-ac5703717f79",
+ "usage": {
+  "uncachedInputTokens": 34145,
+  "outputTokens": 4034,
+  "cacheReadTokens": 91200,
+  "cacheWriteTokens": 0
+ },
+ "steps": 6,
+ "turns": 1,
+ "llmMs": 124624,
+ "toolMs": 14879,
+ "settledMs": 139734,
+ "success": 1,
+ "note": "official TB tests; integer-cent arithmetic",
+ "missing_fields": [],
+ "usageTotalTokens": 129379,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 0,
+  "byTool": {},
+  "avoidedTokens": 0,
+  "auxRequests": 0,
+  "estPromptTokens": 583621,
+  "cacheHitPct": 94,
+  "reliefPct": 0,
+  "estRatio": 0.94
+ }
+}

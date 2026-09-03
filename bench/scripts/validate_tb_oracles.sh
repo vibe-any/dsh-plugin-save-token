@@ -14,6 +14,12 @@ run_case() { # $1=task $2=positive(1)|negative(0)
   local task="$1" want_pass="$2"
   local ws="/tmp/tbval-${task}-$RANDOM"
   rm -rf "$ws" && cp -R "$SB/$task/initial" "$ws"
+  # corpus is committed gzip-compressed; fall back to raw like prep_episode.sh
+  if ! ls "$ws"/records_*.jsonl >/dev/null 2>&1; then
+    for g in "$ws"/records_*.jsonl.gz; do
+      [ -e "$g" ] && gunzip -c "$g" > "$ws/$(basename "${g%.gz}")"
+    done
+  fi
   case "$task" in
     tb-jsonl-aggregator)
       if [ "$want_pass" = 1 ]; then

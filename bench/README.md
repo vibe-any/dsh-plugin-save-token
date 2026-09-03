@@ -11,6 +11,13 @@ Result: 16 compression events across 8/12 treatment episodes, **−17.6% total
 tokens, success-rate parity (100% both arms)**, per-episode median −56%.
 Report: `report_2026-08-29.md`; per-episode records: `results/raw/`.
 
+Round 2 (plugin v2.4.1, Linux host, 2026-09-03): 24/24 valid, success-rate
+parity again; aggregate Δ dominated by a single dump-heavy outlier (+38.0%
+raw, −0.6% excluding it); consistent savings on SWE tasks (−19.7%/−18.0%);
+cache-hit ~90% both arms (±0.7pp). Adds cache-hit-rate as a first-class
+metric. Report: `report_2026-09-03.md`; records: `results/raw2/`;
+summary: `results/summary-r2.md` (`scripts/analyze2.py`).
+
 ## Layout
 
 | Path | What it is |

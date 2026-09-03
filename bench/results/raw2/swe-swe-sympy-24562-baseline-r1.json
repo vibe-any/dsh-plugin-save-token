@@ -1,0 +1,37 @@
+{
+ "benchId": "swe",
+ "taskId": "swe-sympy-24562",
+ "arm": "baseline",
+ "repeat": 1,
+ "sessionId": "e5abfcdb-2d7c-4e73-a624-ccab492a90bc",
+ "usage": {
+  "uncachedInputTokens": 49036,
+  "outputTokens": 14153,
+  "cacheReadTokens": 1000320,
+  "cacheWriteTokens": 0
+ },
+ "steps": 38,
+ "turns": 1,
+ "llmMs": 466963,
+ "toolMs": 90377,
+ "settledMs": 558300,
+ "success": 1,
+ "note": "upstream-style fix in numbers.py; judge F2P+P2P green",
+ "missing_fields": [],
+ "usageTotalTokens": 1063509,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 0,
+  "byTool": {},
+  "avoidedTokens": 0,
+  "auxRequests": 0,
+  "estPromptTokens": 1801837,
+  "cacheHitPct": 97,
+  "reliefPct": 0,
+  "estRatio": 1
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "benchId": "tb",
+ "taskId": "tb-access-logs",
+ "arm": "treatment",
+ "repeat": 1,
+ "sessionId": "e874eede-801a-4966-84a9-25cc91f139a4",
+ "usage": {
+  "uncachedInputTokens": 165165,
+  "outputTokens": 7045,
+  "cacheReadTokens": 1692352,
+  "cacheWriteTokens": 0
+ },
+ "steps": 18,
+ "turns": 1,
+ "llmMs": 247750,
+ "toolMs": 485,
+ "settledMs": 248674,
+ "success": 1,
+ "note": "official TB tests; dump-heavy strategy, replays=48",
+ "missing_fields": [],
+ "usageTotalTokens": 1864562,
+ "plugin": {
+  "compressionEvents": 4,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 48,
+  "byTool": {},
+  "avoidedTokens": 423484,
+  "auxRequests": 0,
+  "estPromptTokens": 1719990,
+  "cacheHitPct": 93,
+  "reliefPct": 15,
+  "estRatio": 1.51
+ }
+}

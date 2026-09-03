@@ -38,7 +38,7 @@ case "$task" in
     (cd "$ep" && uv venv --python 3.11 .venv >/dev/null 2>&1)
     VENV="$ep/.venv"
     case "$repo" in
-      sympy)  uv pip install --python "$VENV/bin/python" mpmath >/dev/null 2>&1
+      sympy)  uv pip install --python "$VENV/bin/python" mpmath pytest >/dev/null 2>&1
               SETUPTOOLS_SCM_PRETEND_VERSION=1.12 uv pip install --python "$VENV/bin/python" -e "$ep" >/dev/null 2>&1 ;;
       django) uv pip install --python "$VENV/bin/python" asgiref sqlparse >/dev/null 2>&1
               uv pip install --python "$VENV/bin/python" -e "$ep" >/dev/null 2>&1 ;;

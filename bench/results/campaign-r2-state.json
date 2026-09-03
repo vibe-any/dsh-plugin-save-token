@@ -1,0 +1,204 @@
+{
+ "round": "r2-2026-09-03",
+ "pluginVersion": "2.4.1 (lib/ mounted, runtime == repo build)",
+ "rawroot": "bench/results/raw2",
+ "summary": "bench/results/summary-r2.md",
+ "analyzer": "bench/scripts/analyze2.py",
+ "protocol": "bench/tasks/protocol.md serial discipline; deltas vs round-1 below",
+ "protocolDeltas": [
+  "host is Linux this round (round-1 was native macOS): sympy P2P list ported to repo-relative paths",
+  "dedupeTtlMs is now 600s (was 90s); cross-episode contamination is structurally handled because POST /reset clears the whole dedupe cache between episodes (verified in src/index.js resetAll)",
+  "collect_episode.py plugin snapshot extended (additive): dedupeSavedBytes, losslessEncodes, tabularWindows, replays, auxRequests, estPromptTokens, cacheHitPct, reliefPct, estRatio",
+  "cache hit rate added as first-class metric: per-episode from projcache buckets cacheRead/(uncachedInput+cacheRead+cacheWrite); analyze2.py aggregates per arm/task",
+  "GNU patch 2.7.6 built into ~/.local/bin (no apt/patch on this host); judge scripts unchanged",
+  "validate_tb_oracles.sh gunzip fallback added (fresh clone has only .gz corpus)"
+ ],
+ "cells": {
+  "gaia-l2-locomotives|baseline|r1": {
+   "status": "done",
+   "success": 1,
+   "tokens": 135636,
+   "note": "reconciled from raw2"
+  },
+  "gaia-l2-arxiv-regulation|baseline|r1": {
+   "status": "done",
+   "sessionId": "e15e478f-b3f0-49ab-a022-e8a480de5678",
+   "success": 1,
+   "tokens": 400359,
+   "steps": 11
+  },
+  "gaia-l2-arxiv-regulation|baseline|r2": {
+   "status": "done",
+   "sessionId": "c2838f0c-8d71-411d-aca5-2de1f4fc5ede",
+   "success": 1,
+   "tokens": 284086,
+   "steps": 10
+  },
+  "tb-access-logs|baseline|r1": {
+   "status": "done",
+   "sessionId": "ed9a68d6-de6f-4b2b-bac5-3bd94d4316fe",
+   "success": 1,
+   "tokens": 123119,
+   "steps": 6
+  },
+  "tb-access-logs|baseline|r2": {
+   "status": "done",
+   "sessionId": "15ab3a1b-a375-4b0a-b324-6a91670d4a1c",
+   "success": 1,
+   "tokens": 120957,
+   "steps": 6
+  },
+  "tb-jsonl-aggregator|baseline|r1": {
+   "status": "done",
+   "sessionId": "e117fec7-f0e2-425e-8fc9-0312b204152f",
+   "success": 1,
+   "tokens": 123758,
+   "steps": 6
+  },
+  "tb-jsonl-aggregator|baseline|r2": {
+   "status": "done",
+   "sessionId": "e49973bf-bbc4-4847-8937-ac5703717f79",
+   "success": 1,
+   "tokens": 129379,
+   "steps": 6
+  },
+  "swe-sympy-24562|baseline|r1": {
+   "status": "done",
+   "sessionId": "e5abfcdb-2d7c-4e73-a624-ccab492a90bc",
+   "success": 1,
+   "tokens": 1063509,
+   "steps": 38
+  },
+  "swe-sympy-24562|baseline|r2": {
+   "status": "done",
+   "sessionId": "333c5359-54d5-4349-9368-7a84579a8942",
+   "success": 1,
+   "tokens": 1154017,
+   "steps": 37
+  },
+  "swe-django-16595|baseline|r1": {
+   "status": "done",
+   "sessionId": "2de697c0-afd5-4543-8a1c-29b101affdd8",
+   "success": 1,
+   "tokens": 704481,
+   "steps": 23
+  },
+  "swe-django-16595|baseline|r2": {
+   "status": "done",
+   "sessionId": "e09fca6c-dcb7-4a94-9481-8e0f9670cf4f",
+   "success": 1,
+   "tokens": 444740,
+   "steps": 16
+  },
+  "gaia-l2-locomotives|treatment|r1": {
+   "status": "done",
+   "sessionId": "39be72cb-658e-42db-bd92-be0a7049242c",
+   "success": 1,
+   "tokens": 78346,
+   "steps": 4
+  },
+  "gaia-l2-locomotives|treatment|r2": {
+   "status": "done",
+   "sessionId": "a0a526fd-44e5-4992-be11-113199c949b9",
+   "success": 1,
+   "tokens": 494058,
+   "steps": 21
+  },
+  "gaia-l2-arxiv-regulation|treatment|r1": {
+   "status": "done",
+   "sessionId": "54d65aac-ba40-42a9-919e-3920db849d7c",
+   "success": 1,
+   "tokens": 482209,
+   "steps": 15
+  },
+  "gaia-l2-arxiv-regulation|treatment|r2": {
+   "status": "done",
+   "sessionId": "8afa652b-b8bf-4375-9fd7-09efc4880e22",
+   "success": 1,
+   "tokens": 505236,
+   "steps": 16
+  },
+  "tb-access-logs|treatment|r1": {
+   "status": "done",
+   "sessionId": "e874eede-801a-4966-84a9-25cc91f139a4",
+   "success": 1,
+   "tokens": 1864562,
+   "steps": 18
+  },
+  "tb-access-logs|treatment|r2": {
+   "status": "done",
+   "sessionId": "c8c9e00c-59ef-467b-b76f-34d192e0056f",
+   "success": 1,
+   "tokens": 262806,
+   "steps": 8
+  },
+  "tb-jsonl-aggregator|treatment|r1": {
+   "status": "done",
+   "sessionId": "44c57494-bb8f-4fa6-9a7c-8168dba5dd7d",
+   "success": 1,
+   "tokens": 150519,
+   "steps": 7
+  },
+  "tb-jsonl-aggregator|treatment|r2": {
+   "status": "done",
+   "sessionId": "4116f625-ce43-48f2-b6e3-0bef56101a5b",
+   "success": 1,
+   "tokens": 107479,
+   "steps": 5
+  },
+  "swe-sympy-24562|treatment|r1": {
+   "status": "done",
+   "sessionId": "6cb30bb3-e6ef-4a90-95c0-a4e2039d0636",
+   "success": 1,
+   "tokens": 953202,
+   "steps": 31
+  },
+  "swe-sympy-24562|treatment|r2": {
+   "status": "done",
+   "sessionId": "73c41d63-5a62-42c1-89e1-4b9895f22684",
+   "success": 1,
+   "tokens": 828510,
+   "steps": 27
+  },
+  "swe-django-16595|treatment|r1": {
+   "status": "done",
+   "sessionId": "05ba443c-703e-4336-a3ab-0a1477466637",
+   "success": 1,
+   "tokens": 556564,
+   "steps": 23
+  },
+  "swe-django-16595|treatment|r2": {
+   "status": "done",
+   "sessionId": "0c7bdddf-d49c-4b7c-874c-30f4cdbfb256",
+   "success": 1,
+   "tokens": 385998,
+   "steps": 15
+  },
+  "gaia-l2-locomotives|baseline|r2": {
+   "status": "done",
+   "success": 1,
+   "tokens": 148133,
+   "note": "reconciled from raw2"
+  }
+ },
+ "incidents": [
+  {
+   "cell": "gaia-l2-arxiv-regulation|treatment|r1",
+   "issue": "launch prompt typo (had vs has) \u2014 discarded before metrics, relaunched verbatim",
+   "action": "interrupt+relaunch",
+   "at": "treatment r1 launch"
+  }
+ ],
+ "armActive": "treatment",
+ "batchOrder": [
+  "gaia-l2-locomotives",
+  "gaia-l2-arxiv-regulation",
+  "tb-access-logs",
+  "tb-jsonl-aggregator",
+  "swe-sympy-24562",
+  "swe-django-16595"
+ ],
+ "repeatsPerCell": 2,
+ "notes": "Baseline batch first (flags all false), then switch arm, then treatment batch. Serial: one episode at a time; reset meters right before launch (after previous episode fully settled+collected).",
+ "campaignComplete": true
+}

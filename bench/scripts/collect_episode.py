@@ -60,11 +60,22 @@ def main():
         with urllib.request.urlopen(a.dashboard, timeout=5) as r:
             dash = json.load(r)
         comp = dash.get('compression', {}) or {}
+        totals = dash.get('totals', {}) or {}
         rec['plugin'] = {
             'compressionEvents': comp.get('count', 0),
             'dedupeHits': comp.get('dedupeHits', 0),
+            'dedupeSavedBytes': comp.get('dedupeSavedBytes', 0),
+            'losslessEncodes': comp.get('losslessEncodes', 0),
+            'tabularWindows': comp.get('tabularWindows', 0),
+            'replays': comp.get('replays', 0),
             'byTool': comp.get('byTool') or {},
-            'avoidedTokens': (dash.get('totals', {}) or {}).get('avoidedTokens', 0),
+            'avoidedTokens': totals.get('avoidedTokens', 0),
+            # v2.4.1 additions (additive; old analyzer ignores unknown keys)
+            'auxRequests': totals.get('auxRequests', 0),
+            'estPromptTokens': totals.get('estPromptTokens', 0),
+            'cacheHitPct': dash.get('cacheHitPct'),
+            'reliefPct': dash.get('reliefPct'),
+            'estRatio': dash.get('estRatio'),
         }
     except Exception as e:
         rec['plugin'] = {'error': str(e)}

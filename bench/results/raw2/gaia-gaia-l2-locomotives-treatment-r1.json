@@ -1,0 +1,37 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-locomotives",
+ "arm": "treatment",
+ "repeat": 1,
+ "sessionId": "39be72cb-658e-42db-bd92-be0a7049242c",
+ "usage": {
+  "uncachedInputTokens": 30245,
+  "outputTokens": 1445,
+  "cacheReadTokens": 46656,
+  "cacheWriteTokens": 0
+ },
+ "steps": 4,
+ "turns": 1,
+ "llmMs": 40095,
+ "toolMs": 879,
+ "settledMs": 41138,
+ "success": 1,
+ "note": "FINAL_ANSWER: 60; plugin ce=0 this episode",
+ "missing_fields": [],
+ "usageTotalTokens": 78346,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 0,
+  "byTool": {},
+  "avoidedTokens": 0,
+  "auxRequests": 0,
+  "estPromptTokens": 827568,
+  "cacheHitPct": 96,
+  "reliefPct": 0,
+  "estRatio": 0.96
+ }
+}

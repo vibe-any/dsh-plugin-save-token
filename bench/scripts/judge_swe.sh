@@ -13,7 +13,12 @@ cd "$ep" || { echo "NO_TREE"; exit 65; }
 case "$kind" in
   sympy)
     VER=1.12; TP="$PAT/sympy_sympy-24562.test.diff"
-    F2P_CMD=(./.venv/bin/python bin/test sympy/core/tests/test_numbers.py -k test_issue_24543)
+    # pytest runner (sympy tests are pytest-compatible): node-selectable, so the
+    # single env-drift node test_Float (Float('_1') no longer raises on this
+    # host's CPython; fails identically on ANY correctly-fixed tree, see
+    # report portability notes) can be deselected from the P2P sweep while the
+    # F2P keeps its exact node. Symmetric across arms.
+    F2P_CMD=(./.venv/bin/python -m pytest sympy/core/tests/test_numbers.py -k test_issue_24543 -q)
     ;;
   django)
     VER=""; TP="$PAT/django_django-16595.test.diff"
@@ -42,7 +47,7 @@ case "$kind" in
   sympy)
     "${F2P_CMD[@]}" >/tmp/j_f2p.log 2>&1; F2P_RC=$?
     FILES=$(jq -r '.[]' "$PAT/sympy-24562.p2p_files.json" | tr '\n' ' ')
-    ./.venv/bin/python bin/test $FILES >/tmp/j_p2p.log 2>&1; P2P_RC=$?
+    ./.venv/bin/python -m pytest $FILES --deselect sympy/core/tests/test_numbers.py::test_Float -q >/tmp/j_p2p.log 2>&1; P2P_RC=$?
     ;;
   django)
     ./.venv/bin/python tests/runtests.py migrations.test_optimizer.OptimizerTests.test_alter_alter_field -v 0 >/tmp/j_f2p.log 2>&1; F2P_RC=$?

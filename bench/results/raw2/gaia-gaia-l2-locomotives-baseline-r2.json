@@ -1,0 +1,37 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-locomotives",
+ "arm": "baseline",
+ "repeat": 2,
+ "sessionId": "5cd5ad24-e94c-4680-915e-cd210bc4e659",
+ "usage": {
+  "uncachedInputTokens": 15032,
+  "outputTokens": 4077,
+  "cacheReadTokens": 129024,
+  "cacheWriteTokens": 0
+ },
+ "steps": 7,
+ "turns": 1,
+ "llmMs": 134225,
+ "toolMs": 7105,
+ "settledMs": 141552,
+ "success": 1,
+ "note": "FINAL ANSWER: 60 wheels (gold 60; format line used space not underscore, answer unambiguous)",
+ "missing_fields": [],
+ "usageTotalTokens": 148133,
+ "plugin": {
+  "compressionEvents": 0,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 0,
+  "byTool": {},
+  "avoidedTokens": 0,
+  "auxRequests": 0,
+  "estPromptTokens": 1351029,
+  "cacheHitPct": 98,
+  "reliefPct": 0,
+  "estRatio": 0.99
+ }
+}

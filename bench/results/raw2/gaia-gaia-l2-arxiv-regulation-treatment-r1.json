@@ -1,0 +1,37 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-arxiv-regulation",
+ "arm": "treatment",
+ "repeat": 1,
+ "sessionId": "54d65aac-ba40-42a9-919e-3920db849d7c",
+ "usage": {
+  "uncachedInputTokens": 32641,
+  "outputTokens": 13984,
+  "cacheReadTokens": 435584,
+  "cacheWriteTokens": 0
+ },
+ "steps": 15,
+ "turns": 1,
+ "llmMs": 411969,
+ "toolMs": 4508,
+ "settledMs": 416904,
+ "success": 1,
+ "note": "FINAL_ANSWER: Egalitarian; decoded figure PDF from e-print",
+ "missing_fields": [],
+ "usageTotalTokens": 482209,
+ "plugin": {
+  "compressionEvents": 2,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 7,
+  "byTool": {},
+  "avoidedTokens": 3136,
+  "auxRequests": 0,
+  "estPromptTokens": 1138575,
+  "cacheHitPct": 97,
+  "reliefPct": 0,
+  "estRatio": 1
+ }
+}

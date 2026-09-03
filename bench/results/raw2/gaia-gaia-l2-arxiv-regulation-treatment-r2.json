@@ -1,0 +1,37 @@
+{
+ "benchId": "gaia",
+ "taskId": "gaia-l2-arxiv-regulation",
+ "arm": "treatment",
+ "repeat": 2,
+ "sessionId": "8afa652b-b8bf-4375-9fd7-09efc4880e22",
+ "usage": {
+  "uncachedInputTokens": 59921,
+  "outputTokens": 13379,
+  "cacheReadTokens": 431936,
+  "cacheWriteTokens": 0
+ },
+ "steps": 16,
+ "turns": 1,
+ "llmMs": 399525,
+ "toolMs": 43627,
+ "settledMs": 443746,
+ "success": 1,
+ "note": "FINAL_ANSWER: Egalitarian",
+ "missing_fields": [],
+ "usageTotalTokens": 505236,
+ "plugin": {
+  "compressionEvents": 2,
+  "dedupeHits": 0,
+  "dedupeSavedBytes": 0,
+  "losslessEncodes": 0,
+  "tabularWindows": 0,
+  "replays": 10,
+  "byTool": {},
+  "avoidedTokens": 28544,
+  "auxRequests": 0,
+  "estPromptTokens": 1199237,
+  "cacheHitPct": 95,
+  "reliefPct": 2,
+  "estRatio": 0.95
+ }
+}
