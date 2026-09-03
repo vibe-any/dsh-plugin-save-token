@@ -119,8 +119,34 @@ Once installed there is nothing to operate: open **Settings → Token Saver** fo
 | `maxLines / headLines / tailLines` | 240/140/80 | Window shape for ordinary long outputs |
 | `tabularHeadRows / tabularTailRows / tabularStrideSamples` | 60/40/50 | Retention and sampling density in table mode |
 | `longLineChars` | 420 | Head/tail truncation threshold for single oversized lines |
-| `dedupeTtlMs` | 90000 | Validity window for cross-turn dedup |
-| `compactBudgetTokens / compactCooldownMs` | 120000/600000 | Trigger level and cooldown for compaction coupling |
+| `jsonlMinLines` | 8 | Minimum uniform-object lines for the JSONL/NDJSON lossless route |
+| `noticeFullTrailerCount` | 3 | First N adopted compressions carry the verbose retrieval notice; later ones use the compact trailer (same id + locator) |
+| `dedupeTtlMs` | 600000 | Validity window for cross-turn dedup (fingerprints are byte-exact, so a longer window is information-safe) |
+| `dedupeTtlOverrides` | {} | Per-tool TTL in ms; `0` disables dedupe for that tool (freshness-sensitive commands) |
+| `compactAssistEnabled` | false | Compaction coupling master switch — **off by default** (see cache note below) |
+| `compactBudgetTokens / compactCooldownMs` | 120000/600000 | Absolute fallback watermark and cooldown for the compaction assist |
+| `contextWindowTokens / compactWatermarkRatio` | 0/0.85 | When the model window is known, the watermark is `window × ratio` instead of the absolute budget |
+
+v2.2.0 behavior notes:
+
+- Dedupe keys carry the owning session id and hash the FULL args/content strings (long shared prefixes can no longer produce false "byte-identical" stubs; two sessions sharing one process never see each other's stubs).
+- `save_token_expand` output is exempt from compression — unfolding a notice can never hand back the same elided preview again.
+- Lossless routes extended: JSONL/NDJSON logs, nested field groups (`pos{x,y}`), keyed maps, and a depth-2 dominant-array search (`{data:{items:[...]}}`). Lossless wins whenever it passes the never-worse gates; the lossy elision candidate is generated as the gate-checked fallback before the line compressor, and lossy notices disclose exactly what was omitted.
+- Compression counters increment on adopted candidates (previously on attempts that the gates could still reject).
+
+v2.3.0 cache-aware layer (bench evidence: 88.9% of measured input tokens were provider cache reads, billed at ~1/30 of the miss price on DeepSeek):
+
+- **Compaction assist defaults to OFF** and is repositioned as an anti-overflow measure, not a saver: summarizing 120k→40k tokens converts cheap cached replay into full-price input and breaks even only after ~60 further requests. Turn it on when sessions actually grow past the watermark; do not expect it to cut spend. The toggle and watermark are honest in the panel.
+- The watermark prefers the **last real billed input** for the session (main requests only) over the heuristic estimate, and scales with the model window (`contextWindowTokens × compactWatermarkRatio`) when configured.
+- **Cache-hit sentinel KPI**: `cacheRead`/`cacheWrite` are metered separately and the panel shows the cache-hit percentage. If a future change tanks that number, it is saving tokens while silently raising real cost.
+- **Online calibration**: a per-model EMA of billed/estimated tokens (learned from real usage each request) corrects the avoided-token accounting — no bundled tokenizer. The compression token gate needs no calibration (the ratio cancels in that comparison).
+
+v2.4.0 closing items:
+
+- Dedupe TTL default 90s → 600s with per-tool overrides (`dedupeTtlOverrides`, `0` opts a tool out entirely).
+- Error-line protection in plain-text windows widened to **±1 context line** (25 anchors, adjacent anchors merged): a bare assertion line rarely explains itself; the neighboring test name / stack header is what saves a re-run.
+- `save_token_expand` survives eviction and restarts: an id→locator side index outlives the text cache, so a miss returns the spill locator (with a transparent `spillStore.readText` attempt when the host offers one) instead of a dead end.
+- Top-level vs nested tool calls are counted on the panel — the nesting exemption currently skips compression for subagent-internal calls, and this counter finally quantifies that unexploited surface before anyone flips it.
 
 ---
 
@@ -131,15 +157,19 @@ tool returns ──► tools/post-execute (prepend)
              ├─ size ≤ threshold? ────────── pass through
              ├─ byte-identical within 90s? ─ spill original → replace with dedup stub
              ├─ JSON with uniform array? ─── TOON lossless re-encode (zero loss)
+             ├─ JSONL of uniform objects? ── one TOON table for the whole log
              ├─ pipe/tab table shape? ────── stride-sampled window with line numbers
              └─ other long text ──────────── head/tail window + error-line protection
-                      │  double gate: ≤72% bytes AND tokens strictly decrease
+                      │  double gate per route: ≤72% bytes AND tokens strictly decrease
+                      │  (lossless first; lossy elision is the gate-checked fallback)
                       ▼
              spill original to spillStore → inject [save-token #id] retrieval notice
                       ▼
-every model request ◄── llm/stream metering (real billing + avoided tokens)
-step boundaries ──► est > 120k? ──► compaction.compactIfNeeded('pressure')
+every model request ◄── llm/stream metering (real billing + avoided tokens, per-model calibrated)
+step boundaries ──► assist on AND billed > watermark? ──► compaction.compactIfNeeded('pressure')
 ```
+
+All compression logic lives in `src/compress.js` (pure, side-effect free) and is pinned by the unit-test suite: `npm test` (`node --test`, zero extra dependencies).
 
 ## Directory layout
 
@@ -152,8 +182,10 @@ dsh-plugin-save-token/
 ├── cordis.patch.yml      ← the bundle layer inserted into the profile roster
 ├── build.mjs             ← esbuild script producing lib/
 ├── src/
-│   ├── index.js          ← Host half: waterfall hooks / compression algorithms / tool registration / API routes
+│   ├── index.js          ← Host half: waterfall hooks / orchestration / tool registration / API routes
+│   ├── compress.js       ← pure compression brain (estimators, TOON tabular, gates, notices)
 │   └── client/index.js   ← Client half: Dashboard panel + input-box live strip
+├── test/                 ← node --test unit suite pinning the compression brain
 └── lib/                  ← built artifacts (committed, so git installs need no build step)
     ├── index.js          ← bundled ESM host half (node)
     └── client.js         ← bundled client half wrapped in window.__ModuleLoader__.load({ id, factory })
@@ -161,7 +193,8 @@ dsh-plugin-save-token/
 
 ## Design red lines ("no dumbing down" promises)
 
-1. **Reversible**: failed disk write = abandon compression; `read` tool output is never processed (by-design exemption).
-2. **Lossless first**: if lossless is possible, lossy never runs; notices say so truthfully.
+1. **Reversible**: failed disk write = abandon compression; `read` and `save_token_expand` outputs are never processed (by-design exemptions).
+2. **Lossless first**: lossless wins whenever it passes the never-worse gate; lossy elision runs only as the gate-checked fallback and its notices disclose what was omitted.
 3. **Double gate**: every replacement must prove itself "smaller in bytes AND cheaper in tokens," or it passes through.
-4. **Error protection**: high thresholds around failure scenes, mandatory retention of error lines.
+4. **Error protection**: high thresholds around failure scenes, mandatory retention of error lines (±1 context line).
+5. **Cache-stable**: compression happens once, at tool-result entry; history stays byte-stable afterwards, so the provider prompt cache keeps hitting (measured: 88.9% of input tokens were cache reads at ~1/30 price). Replay-time rewriting of history is out of scope by design — it lowers the token meter while raising the real bill.

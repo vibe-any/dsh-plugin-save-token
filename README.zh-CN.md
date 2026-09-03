@@ -118,8 +118,34 @@ dsh plugin --profile web add /absolute/path/to/dsh-plugin-save-token
 | `maxLines / headLines / tailLines` | 240/140/80 | 普通长输出的窗口形状 |
 | `tabularHeadRows / tabularTailRows / tabularStrideSamples` | 60/40/50 | 表格模式的保留与采样密度 |
 | `longLineChars` | 420 | 单行超长的首尾截断阈值 |
-| `dedupeTtlMs` | 90000 | 跨轮去重的有效窗口 |
-| `compactBudgetTokens / compactCooldownMs` | 120000/600000 | compaction 联动的触发水位与冷却 |
+| `jsonlMinLines` | 8 | JSONL/NDJSON 无损路线的最少均匀对象行数 |
+| `noticeFullTrailerCount` | 3 | 前 N 次压缩使用完整取回通知，其后使用紧凑 trailer（id 与 locator 保留） |
+| `dedupeTtlMs` | 600000 | 跨轮去重的有效窗口（指纹字节级全等，长窗口信息安全） |
+| `dedupeTtlOverrides` | {} | 分工具 TTL（毫秒）；`0` 表示该工具永不去重（新鲜度敏感命令） |
+| `compactAssistEnabled` | false | compaction 联动总开关——**默认关闭**（见下方缓存说明） |
+| `compactBudgetTokens / compactCooldownMs` | 120000/600000 | compaction 联动的绝对水位兜底与冷却 |
+| `contextWindowTokens / compactWatermarkRatio` | 0/0.85 | 已知模型窗口时，水位 = `窗口 × 比例`，替代绝对预算 |
+
+v2.2.0 行为说明：
+
+- 去重指纹携带会话 id，并对完整参数/内容做哈希（长前缀不再可能误判"字节相同"；同进程多会话互不污染 stub）。
+- `save_token_expand` 的输出豁免压缩——展开通知不会再拿到同样被裁剪的预览。
+- 无损路线扩展：JSONL/NDJSON 日志、嵌套字段组（`pos{x,y}`）、键控 map、深层主导数组搜索（`{data:{items:[...]}}`）。无损路线过 never-worse 门即优先采纳；有损 elision 作为过门失败的降级候选先于行窗口尝试，且通知会如实披露裁剪形状。
+- 压缩计数改为"被采纳的压缩"口径（此前统计的是含门控拒绝在内的尝试次数）。
+
+v2.3.0 缓存感知层（bench 实证：88.9% 的输入 token 是供应商缓存读，DeepSeek 按 ~1/30 未命中价计费）：
+
+- **compaction 联动默认关闭**，并重新定位为"防溢出"手段而非省钱手段：把 120k 上下文摘要成 40k，等于把廉价的缓存重放换成全价输入，需再跑 ~60 个请求才回本。会话真的逼近水位时再打开；不要指望它降成本。面板上的开关与水位如实显示。
+- 水位优先使用该会话**最近一次真实计费输入**（仅主请求），启发式估算只兜底首请求；配置了模型窗口时水位随窗口缩放（`contextWindowTokens × compactWatermarkRatio`）。
+- **缓存命中哨兵 KPI**：`cacheRead`/`cacheWrite` 分桶计量，面板显示缓存命中率。未来任何改动若打爆这个数字，就是在"省 token、涨成本"。
+- **在线自校准**：按模型维护"真实计费/自估"比值的 EMA（每次请求用真实 usage 学习），修正 avoided-token 口径——不捆绑任何 tokenizer。压缩 token 门无需校准（比值在该比较中约掉）。
+
+v2.4.0 收尾项：
+
+- 去重 TTL 默认 90s → 600s，并支持分工具覆盖（`dedupeTtlOverrides`，`0` 完全退出某工具的去重）。
+- 纯文本窗口的错误行保护升级为 **±1 上下文行**（25 个锚点、相邻合并）：裸 assertion 行很难自解释，旁边的测试名/栈头才是省掉重跑的关键。
+- `save_token_expand` 可跨淘汰与重启：id→locator 侧索引独立于文本缓存存活，未命中时返回落盘 locator（宿主提供 `spillStore.readText` 时透明尝试直读），不再给死胡同。
+- 面板新增顶层/嵌套工具调用计数——嵌套豁免目前跳过子 agent 内部调用的压缩，这个计数让"未开发的收益面"第一次有了数字，再决定是否动豁免。
 
 ---
 
@@ -130,14 +156,16 @@ dsh plugin --profile web add /absolute/path/to/dsh-plugin-save-token
              ├─ 体积 ≤ 阈值？ ──────────── 原样放行
              ├─ 90s 内字节级重复？ ─────── spill 原文 → 替换为 dedup stub
              ├─ JSON 且含均匀数组？ ────── TOON 无损重编码（零损失）
+             ├─ 均匀对象 JSONL？ ───────── 整表 TOON 化
              ├─ 管道/制表表格形态？ ────── 行号步进采样窗口
              └─ 其他长文本 ─────────────── 头尾窗口 + 错误行保护
-                      │  双门控：≤72% 字节 且 token 严格下降
+                      │  逐路线双门控：≤72% 字节 且 token 严格下降
+                      │  （无损优先；有损 elision 为过门失败的降级候选）
                       ▼
              spillStore 落盘原文 → 注入 [save-token #id] 取回通知
                       ▼
-每次模型请求 ◄── llm/stream 计量（真实账单 + avoided tokens）
-步骤边界   ──► est > 120k? ──► compaction.compactIfNeeded('pressure')
+每次模型请求 ◄── llm/stream 计量（真实账单 + avoided tokens，按模型在线校准）
+步骤边界   ──► 联动开启 且 真实计费 > 水位？ ──► compaction.compactIfNeeded('pressure')
 ```
 
 ## 目录结构
@@ -151,8 +179,10 @@ dsh-plugin-save-token/
 ├── cordis.patch.yml    ← 写入 profile 组合层的 bundle 层声明
 ├── build.mjs           ← esbuild 构建脚本，产出 lib/
 ├── src/
-│   ├── index.js        ← Host 半：瀑布挂接 / 压缩算法 / 工具注册 / API 路由
+│   ├── index.js        ← Host 半：瀑布挂接 / 编排 / 工具注册 / API 路由
+│   ├── compress.js     ← 纯函数压缩核心（估算器 / TOON 表化 / 双门控 / 通知）
 │   └── client/index.js ← Client 半：Dashboard 面板 + 输入框实时条
+├── test/               ← node --test 单元测试，钉住压缩核心行为
 └── lib/                ← 构建产物（入库提交，git 安装免构建）
     ├── index.js        ← 打包后的 ESM host 半（node）
     └── client.js       ← 打包后的 client 半（window.__ModuleLoader__.load({ id, factory }) 包装）
@@ -160,7 +190,8 @@ dsh-plugin-save-token/
 
 ## 设计红线（"不降智"承诺）
 
-1. **可逆**：落盘失败 = 放弃压缩；`read` 工具输出永不处理（设计豁免）。
-2. **无损优先**：能无损就不有损，通知里如实标注。
+1. **可逆**：落盘失败 = 放弃压缩；`read` 与 `save_token_expand` 输出永不处理（设计豁免）。
+2. **无损优先**：无损路线过 never-worse 门即必选；有损 elision 仅作过门失败的降级候选，且通知如实披露裁剪内容。
 3. **双门控**：任何替换都要证明自己"更小且更省 token"，否则放行。
-4. **错误保护**：报错现场高门槛、错误行强制保留。
+4. **错误保护**：报错现场高门槛、错误行（±1 上下文行）强制保留。
+5. **缓存稳定**：压缩只在工具结果进入上下文时发生一次，此后历史字节不变，供应商提示缓存持续命中（实测 88.9% 输入 token 为 ~1/30 价的缓存读）。回放期改写历史不在设计范围内——那只降 token 表、涨真账单。
