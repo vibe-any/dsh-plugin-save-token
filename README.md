@@ -69,6 +69,27 @@ the context (verbose test runs, raw log/JSON dumps); when agents go through the
 write-file-then-read pattern it never triggers — and costs nothing. Success rate
 was never hurt.
 
+### End-to-end A/B, round 2 — the optimized build (2026-09-03, v2.4.1)
+
+Same harness re-run after the v2.4.1 optimizations (lossless-TOON-first pipeline,
+gated fallback, cache-aware layer), this time on a Linux host. 24/24 valid
+episodes again; unique variable unchanged. Report: [`bench/report_2026-09-03.md`](./bench/report_2026-09-03.md), records: [`bench/results/raw2/`](./bench/results/raw2), summary: [`bench/results/summary-r2.md`](./bench/results/summary-r2.md).
+
+| Metric | baseline | treatment (v2.4.1 on) |
+|---|---|---|
+| Success rate | 100% (12/12) | **100% (12/12)** — **48/48 across both rounds, zero damage re-confirmed** |
+| Provider cache-hit rate | 90.0% | **90.7%** — held at **91.1%** even in the heaviest episode (1.86M tokens of repeated dump/expand cycles) |
+| Tokens avoided (plugin estimate) | — | **~560k** — 11 compressions across 6/12 episodes (13.8% of their tokens) |
+| SWE long-context tasks (sympy / django) | — | **−19.7% / −18.0%**, both repeats same direction |
+
+Take-aways: on the optimized build the value proposition sharpens — savings
+concentrate exactly where context is longest and output is largest (SWE-style
+agent runs), the cache-aware marker-replay layer keeps provider cache hits
+stable even under worst-case repeated re-reading, and success rate remains
+untouched. As with any n=2 study, one agent-side strategy outlier can outweigh
+per-output savings in the aggregate — see the report's paired per-task analysis
+for the breakdown.
+
 ### Single-event compression strength
 
 | Input | Before | After | Strategy |
@@ -134,7 +155,7 @@ v2.2.0 behavior notes:
 - Lossless routes extended: JSONL/NDJSON logs, nested field groups (`pos{x,y}`), keyed maps, and a depth-2 dominant-array search (`{data:{items:[...]}}`). Lossless wins whenever it passes the never-worse gates; the lossy elision candidate is generated as the gate-checked fallback before the line compressor, and lossy notices disclose exactly what was omitted.
 - Compression counters increment on adopted candidates (previously on attempts that the gates could still reject).
 
-v2.3.0 cache-aware layer (bench evidence: 88.9% of measured input tokens were provider cache reads, billed at ~1/30 of the miss price on DeepSeek):
+v2.3.0 cache-aware layer (bench evidence: ~90% of measured input tokens were provider cache reads, billed at ~1/30 of the miss price on DeepSeek):
 
 - **Compaction assist defaults to OFF** and is repositioned as an anti-overflow measure, not a saver: summarizing 120k→40k tokens converts cheap cached replay into full-price input and breaks even only after ~60 further requests. Turn it on when sessions actually grow past the watermark; do not expect it to cut spend. The toggle and watermark are honest in the panel.
 - The watermark prefers the **last real billed input** for the session (main requests only) over the heuristic estimate, and scales with the model window (`contextWindowTokens × compactWatermarkRatio`) when configured.
@@ -197,4 +218,4 @@ dsh-plugin-save-token/
 2. **Lossless first**: lossless wins whenever it passes the never-worse gate; lossy elision runs only as the gate-checked fallback and its notices disclose what was omitted.
 3. **Double gate**: every replacement must prove itself "smaller in bytes AND cheaper in tokens," or it passes through.
 4. **Error protection**: high thresholds around failure scenes, mandatory retention of error lines (±1 context line).
-5. **Cache-stable**: compression happens once, at tool-result entry; history stays byte-stable afterwards, so the provider prompt cache keeps hitting (measured: 88.9% of input tokens were cache reads at ~1/30 price). Replay-time rewriting of history is out of scope by design — it lowers the token meter while raising the real bill.
+5. **Cache-stable**: compression happens once, at tool-result entry; history stays byte-stable afterwards, so the provider prompt cache keeps hitting (measured: ~90% of input tokens were cache reads at ~1/30 price, and 91.1% even in the heaviest dump-heavy episode). Replay-time rewriting of history is out of scope by design — it lowers the token meter while raising the real bill.
