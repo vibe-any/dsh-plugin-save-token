@@ -1,7 +1,11 @@
 /*!
  * dsh-plugin-save-token v2.4.1 — Client half (browser)
- * Live strip: in-flow pill (was an absolutely-positioned floater that
- * covered the tail of the last reply and sibling hover tooltips).
+ * Live strip: in-flow pill matching the shell's own stat pills (transparent,
+ * pill radius, tertiary label, leading glyph) instead of a bordered capsule —
+ * a bordered box did not wrap into the row's design language, and with
+ * `flex-wrap` it re-wrapped onto a second line on narrow windows, growing the
+ * composer row. The strip now stays on one line and drops its trailing
+ * figures instead of wrapping.
  *
  * ES module built by build.mjs into the DSH client-modules handshake
  * (lib/client.js, `window.__ModuleLoader__.load({ id, factory })`). `react`
@@ -51,7 +55,7 @@ const STR = {
     topTools: 'Top tools by bytes kept out', topToolsEmpty: 'nothing compressed yet',
     recent: 'Recent activity',
     footer: 'Lossless-first: uniform JSON arrays are re-encoded deterministically (TOON-style) with zero information loss; regular outputs get structure-aware windows with line-numbered stride samples. Every replacement stays retrievable via the save_token_expand tool or the stored locator.',
-    stripAvoided: '~{n} tok avoided', stripCompressed: '{n} compressed', stripLossless: ' ({n} lossless)', stripReqs: '{n} reqs',
+    stripAvoided: 'saved ~{n} tok', stripCompressed: '{n} compressed', stripLossless: ' ({n} lossless)', stripReqs: '{n} reqs',
     kindCompress: 'compressed', kindLossless: 'lossless', kindDedupe: 'deduped', kindRequest: 'request',
     kindAux: 'aux-call', kindSkip: 'skipped', kindConfig: 'config', kindCompact: 'compaction',
   },
@@ -79,7 +83,7 @@ const STR = {
     topTools: '节省字节最多的工具', topToolsEmpty: '还没有压缩记录',
     recent: '近期活动',
     footer: '无损优先:均匀 JSON 数组确定性重编码(TOON 式),零信息损失;常规输出走结构感知窗口,中段按行号抽采样。每次替换都可经 save_token_expand 工具或存储定位器一步取回。',
-    stripAvoided: '已节省 ~{n} tok', stripCompressed: '压缩 {n} 次', stripLossless: '({n} 无损)', stripReqs: '{n} 次请求',
+    stripAvoided: '节省 ~{n} tok', stripCompressed: '压缩 {n} 次', stripLossless: '({n} 无损)', stripReqs: '{n} 次请求',
     kindCompress: '压缩', kindLossless: '无损', kindDedupe: '去重', kindRequest: '请求',
     kindAux: '辅助', kindSkip: '跳过', kindConfig: '配置', kindCompact: 'compaction',
   },
@@ -93,7 +97,7 @@ function tr(locale, key, vars) {
   return s
 }
 
-const CSS = '.st-wrap{display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}\n.st-kpi{background:var(--dsw-alias-bg-layer-2,color-mix(in srgb,var(--dsw-alias-bg-base,#f7f7f8) 82%,transparent));border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:10px;padding:10px 12px;min-width:0}\n.st-kpi .st-v{font-size:19px;font-weight:650;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.st-kpi .st-s{color:var(--dsw-alias-label-secondary,#6b7280);font-size:11px;margin-top:3px;line-height:1.35}\n.st-card{background:var(--dsw-alias-bg-layer-2,color-mix(in srgb,var(--dsw-alias-bg-base,#f7f7f8) 82%,transparent));border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:10px;padding:12px 14px}\n.st-title{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,#6b7280);letter-spacing:.02em;text-transform:uppercase}\n.st-green{color:var(--dsw-alias-state-success-primary,#15803d)}\n.st-dim{color:var(--dsw-alias-label-secondary,#6b7280)}\n.st-bar{height:8px;border-radius:4px;background:var(--dsw-alias-brand-primary,#2563eb);opacity:.85}\n.st-barrow{display:grid;grid-template-columns:minmax(90px,160px) 1fr auto;gap:10px;align-items:center;margin-top:8px;font-size:12px}\n.st-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}\n.st-table td{padding:4px 6px;border-top:1px solid var(--dsw-alias-border-l1,#eceef1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}\n.st-badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:600;border:1px solid var(--dsw-alias-border-l1,#ddd)}\n.st-btn{border:1px solid var(--dsw-alias-border-l2,#d1d5db);background:transparent;color:inherit;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer}\n.st-btn:hover{border-color:var(--dsw-alias-brand-primary,#2563eb)}\n.st-btn.st-on{border-color:var(--dsw-alias-state-success-primary,#16a34a);background:color-mix(in srgb,var(--dsw-alias-state-success-primary,#16a34a) 14%,transparent);color:var(--dsw-alias-state-success-primary,#15803d);font-weight:650}\n.st-btn.st-on:hover{border-color:var(--dsw-alias-state-success-primary,#16a34a);filter:brightness(1.08)}\n.st-btn.st-off{opacity:.5}\n.st-dot{display:inline-block;width:7px;height:7px;border-radius:999px;margin-right:6px;vertical-align:1px}\n.st-strip{position:static;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:100%;margin:0 auto 6px;font-size:11.5px;color:var(--dsw-alias-label-secondary,#6b7280);background:var(--dsw-alias-bg-layer-2,color-mix(in srgb,var(--dsw-alias-bg-base,#f7f7f8) 82%,transparent));border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:999px;padding:3px 14px;pointer-events:none;width:max-content}'
+const CSS = '.st-wrap{display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}\n.st-kpi{background:var(--dsw-alias-bg-layer-2,color-mix(in srgb,var(--dsw-alias-bg-base,#f7f7f8) 82%,transparent));border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:10px;padding:10px 12px;min-width:0}\n.st-kpi .st-v{font-size:19px;font-weight:650;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.st-kpi .st-s{color:var(--dsw-alias-label-secondary,#6b7280);font-size:11px;margin-top:3px;line-height:1.35}\n.st-card{background:var(--dsw-alias-bg-layer-2,color-mix(in srgb,var(--dsw-alias-bg-base,#f7f7f8) 82%,transparent));border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:10px;padding:12px 14px}\n.st-title{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,#6b7280);letter-spacing:.02em;text-transform:uppercase}\n.st-green{color:var(--dsw-alias-state-success-primary,#15803d)}\n.st-dim{color:var(--dsw-alias-label-secondary,#6b7280)}\n.st-bar{height:8px;border-radius:4px;background:var(--dsw-alias-brand-primary,#2563eb);opacity:.85}\n.st-barrow{display:grid;grid-template-columns:minmax(90px,160px) 1fr auto;gap:10px;align-items:center;margin-top:8px;font-size:12px}\n.st-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}\n.st-table td{padding:4px 6px;border-top:1px solid var(--dsw-alias-border-l1,#eceef1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}\n.st-badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:600;border:1px solid var(--dsw-alias-border-l1,#ddd)}\n.st-btn{border:1px solid var(--dsw-alias-border-l2,#d1d5db);background:transparent;color:inherit;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer}\n.st-btn:hover{border-color:var(--dsw-alias-brand-primary,#2563eb)}\n.st-btn.st-on{border-color:var(--dsw-alias-state-success-primary,#16a34a);background:color-mix(in srgb,var(--dsw-alias-state-success-primary,#16a34a) 14%,transparent);color:var(--dsw-alias-state-success-primary,#15803d);font-weight:650}\n.st-btn.st-on:hover{border-color:var(--dsw-alias-state-success-primary,#16a34a);filter:brightness(1.08)}\n.st-btn.st-off{opacity:.5}\n.st-dot{display:inline-block;width:7px;height:7px;border-radius:999px;margin-right:6px;vertical-align:1px}\n.st-strip{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;padding:1px 8px;border-radius:999px;corner-shape:round;background:0 0;border:none;color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary,#6b7280));font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(20px + var(--dsh-content-font-delta-secondary,0px));font-variant-numeric:tabular-nums}\n.st-strip>*{flex:none}\n.st-strip svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}\n.st-strip-sep{opacity:.45}\n.st-strip-m{min-width:0}\n.st-strip-tight .st-strip-m{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}'
 
 let styled = false
 function ensureStyles() {
@@ -318,20 +322,96 @@ export function apply(ctx) {
         T('footer')))
   }
 
+  /**
+   * Ambient dock strip — one host-style pill on the same line as the shell's
+   * own stat pills: transparent, pill radius, tertiary label color, 14px
+   * leading glyph, `·`-separated figures.
+   *
+   * The dock is a single-line row of fixed height. The previous bordered
+   * capsule re-wrapped to a second line as soon as the window got narrow,
+   * which grew the composer and squeezed the conversation. Two rules now keep
+   * that line: `white-space:nowrap` + `overflow:hidden` make wrapping
+   * impossible, and the layout effect below drops trailing figures (request
+   * count, then compression count) once the pill no longer fits the width the
+   * row grants it. Everything dropped stays in the title tooltip and in
+   * Settings -> Token Saver.
+   */
   function Strip() {
     const ud = useDashboard(4000)
     const d = ud[0]
     const L = useLocale()
     const T = function (k, v) { return tr(L, k, v) }
+    const rootRef = React.useRef(null)
+    // Roomiest ancestor width seen so far. A ref, not a layout-effect local:
+    // the effect re-runs on every dashboard poll and this memory must outlive it.
+    const roomRef = React.useRef(-1)
+    // Trailing figures hidden to keep the row one line; 0 = all of them fit.
+    const [hidden, setHidden] = React.useState(0)
+    // Fit loop. `scrollWidth > clientWidth` means the figures do not fit, so the
+    // last one is dropped. The reverse cannot be read off the pill itself: the
+    // dock row around it is content-sized, so a shorter pill widens the very row
+    // that squeezed it, and measuring that would flip back and forth forever.
+    // Growth is measured on the composer instead — the widest of the first few
+    // real ancestors, which follows the window and the sidebar and never moves
+    // because the pill got shorter. Only then does the pill try its full text.
+    React.useLayoutEffect(function () {
+      const el = rootRef.current
+      if (!el) return function () {}
+      const roomy = function () {
+        let best = el
+        let node = el.parentElement
+        for (let seen = 0; node && seen < 3; node = node.parentElement) {
+          if (getComputedStyle(node).display === 'contents') continue
+          seen++
+          if (node.clientWidth > best.clientWidth) best = node
+        }
+        return best
+      }
+      const fit = function () {
+        const room = roomy().clientWidth
+        if (roomRef.current >= 0 && room > roomRef.current + 8) setHidden(0)
+        roomRef.current = room
+        if (el.scrollWidth > el.clientWidth + 1) setHidden(function (n) { return n < 2 ? n + 1 : n })
+      }
+      fit()
+      // ResizeObserver misses the case where the observed node is replaced, and
+      // the plain window resize is the one users actually cause.
+      window.addEventListener('resize', fit)
+      if (typeof ResizeObserver === 'undefined') {
+        return function () { window.removeEventListener('resize', fit) }
+      }
+      const ro = new ResizeObserver(fit)
+      ro.observe(el)
+      const host = roomy()
+      if (host !== el) ro.observe(host)
+      return function () {
+        ro.disconnect()
+        window.removeEventListener('resize', fit)
+      }
+    }, [hidden, d, L])
     if (!d) return null
     const t = d.totals || {}
     const cc = (d.compression && d.compression.count) || 0
     const ll = (d.compression && d.compression.losslessEncodes) || 0
-    return h('div', { className: 'st-strip' },
-      h('span', null, 'token-saver'),
-      h('span', null, h('b', null, T('stripAvoided', { n: fmtTok(t.avoidedTokens || 0) }))),
-      h('span', null, T('stripCompressed', { n: fmtTok(cc) }) + (ll > 0 ? T('stripLossless', { n: ll }) : '')),
-      h('span', null, T('stripReqs', { n: fmtTok((t.requests || 0)) })))
+    const metrics = [
+      T('stripAvoided', { n: fmtTok(t.avoidedTokens || 0) }),
+      T('stripCompressed', { n: fmtTok(cc) }) + (ll > 0 ? T('stripLossless', { n: ll }) : ''),
+      T('stripReqs', { n: fmtTok(t.requests || 0) }),
+    ]
+    const kids = [
+      h('svg', { key: 'icon', viewBox: '0 0 16 16', width: 14, height: 14, 'aria-hidden': true, focusable: false },
+        h('ellipse', { key: 'top', cx: 8, cy: 4.1, rx: 5.1, ry: 2.1 }),
+        h('path', { key: 'mid', d: 'M2.9 4.1v3.1c0 1.16 2.28 2.1 5.1 2.1s5.1-.94 5.1-2.1V4.1' }),
+        h('path', { key: 'low', d: 'M2.9 7.2v3.1c0 1.16 2.28 2.1 5.1 2.1s5.1-.94 5.1-2.1V7.2' })),
+    ]
+    for (let i = 0; i < metrics.length - hidden; i++) {
+      if (i > 0) kids.push(h('span', { key: 'sep' + i, className: 'st-strip-sep' }, '·'))
+      kids.push(h('span', { key: 'm' + i, className: 'st-strip-m' }, metrics[i]))
+    }
+    // Last tier: not even the lead figure fits. Let that one clip itself with an
+    // ellipsis instead of the row cutting it off mid-glyph.
+    const cls = 'st-strip' + (hidden >= 2 ? ' st-strip-tight' : '')
+    return h('div', { className: cls, ref: rootRef, title: 'Token Saver · ' + metrics.join(' · ') }, kids)
   }
 
   ctx.slots.inject('settings.section', function () {
