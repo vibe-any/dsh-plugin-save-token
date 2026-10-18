@@ -322,21 +322,24 @@ export function apply(ctx) {
     const ud = useDashboard(4000)
     const d = ud[0]
     const L = useLocale()
+    const openState = React.useState(false)
+    const open = openState[0], setOpen = openState[1]
     const T = function (k, v) { return tr(L, k, v) }
     if (!d) return null
     const t = d.totals || {}
     const cc = (d.compression && d.compression.count) || 0
     const ll = (d.compression && d.compression.losslessEncodes) || 0
-    // Compact pill: just "save ~{n} tok". Compression/dedupe/lossless/request
-    // counts move to the hover title so the trigger stays as short as the
-    // dsh-model-stats pill beside it. Bilingual via existing STR keys.
+    // Compact pill: "save ~{n} tok"; click expands the compressed/lossless/
+    // request detail inline (click again to collapse). Hover title keeps the
+    // same detail. Clickable like the dsh-model-stats pill beside it.
     const detail = T('stripCompressed', { n: fmtTok(cc) })
       + (ll > 0 ? ' · ' + T('stripLossless', { n: ll }) : '')
       + ' · ' + T('stripReqs', { n: fmtTok((t.requests || 0)) })
-    return h('div', { className: 'st-strip', 'data-composer-stats': true, title: detail },
+    return h('div', { className: 'st-strip', 'data-composer-stats': true, title: detail, role: 'button', 'aria-expanded': open, onClick: function () { setOpen(!open) } },
       h('span', null, 'save'),
       h('b', null, '~' + fmtTok(t.avoidedTokens || 0)),
-      h('span', null, 'tok'))
+      h('span', null, 'tok'),
+      open ? h('span', { className: 'st-detail' }, ' · ' + detail) : null)
   }
 
   ctx.slots.inject('settings.section', function () {
