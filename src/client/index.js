@@ -93,7 +93,7 @@ function tr(locale, key, vars) {
   return s
 }
 
-const CSS = '.st-strip{display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border:none;background:none;border-radius:999px;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:inherit;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;cursor:pointer;pointer-events:auto}\n.st-strip b{font-weight:550;color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-detail{color:var(--dsw-alias-label-tertiary,#9ca3af)}\n.st-strip[aria-expanded=true]{white-space:normal;overflow:visible}\n.st-strip:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}\n.st-wrap{display:flex;flex-direction:column;gap:14px;font-size:12px;line-height:1.5;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}\n.st-kpi{border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:var(--dsw-radius-lg,10px);padding:10px 12px}\n.st-title{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,#4b5563)}\n.st-v{font-size:18px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-green{color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-s{font-size:11px;line-height:1.4}\n.st-dim{color:var(--dsw-alias-label-tertiary,#9ca3af)}\n.st-card{border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:var(--dsw-radius-lg,10px);padding:12px}\n.st-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--dsw-alias-border-l1,#e5e7eb);background:none;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--dsw-alias-label-secondary,#4b5563);transition:background .15s,border-color .15s,color .15s}\n.st-btn:hover{border-color:var(--dsw-alias-border-l2,#d1d5db);background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}\n.st-btn.st-on{color:var(--dsw-alias-state-success-primary,#16a34a);border-color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-dot{width:7px;height:7px;border-radius:50%;flex:none}\n.st-table{width:100%;border-collapse:collapse;font-size:12px}\n.st-table td{padding:5px 6px;border-bottom:1px solid var(--dsw-alias-border-l1,#e5e7eb);vertical-align:top}\n.st-table tr:last-child td{border-bottom:none}\n.st-badge{display:inline-block;border:1px solid currentColor;border-radius:999px;padding:0 8px;font-size:11px;line-height:18px}\n.st-barrow{display:flex;align-items:center;gap:8px;margin-top:6px}\n.st-bar{height:6px;border-radius:999px;background:var(--dsw-alias-state-success-primary,#16a34a);flex:none;max-width:100%}'
+const CSS = '.st-strip-wrap{position:relative;display:inline-flex}\n.st-strip{display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border:none;background:none;border-radius:999px;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(20px + var(--dsh-content-font-delta-secondary,0px));color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;pointer-events:auto}\n.st-strip b{font-weight:550;color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-strip:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}\n.st-detail-panel{position:absolute;bottom:calc(100% + 8px);left:0;z-index:1100;box-sizing:border-box;background:var(--dsw-specific-menu);border-radius:var(--dsw-radius-lg,10px);padding:12px 16px;--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);backdrop-filter:var(--dsw-menu-backdrop-filter);color:var(--dsw-alias-label-secondary,#4b5563);font-size:12px;line-height:1.7;min-width:max-content;cursor:default}\n.st-detail-panel b{color:var(--dsw-alias-state-success-primary,#16a34a);font-weight:550}\n.st-strip:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}\n.st-wrap{display:flex;flex-direction:column;gap:14px;font-size:12px;line-height:1.5;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}\n.st-kpi{border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:var(--dsw-radius-lg,10px);padding:10px 12px}\n.st-title{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,#4b5563)}\n.st-v{font-size:18px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary,#1f2937)}\n.st-green{color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-s{font-size:11px;line-height:1.4}\n.st-dim{color:var(--dsw-alias-label-tertiary,#9ca3af)}\n.st-card{border:1px solid var(--dsw-alias-border-l1,#e5e7eb);border-radius:var(--dsw-radius-lg,10px);padding:12px}\n.st-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--dsw-alias-border-l1,#e5e7eb);background:none;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--dsw-alias-label-secondary,#4b5563);transition:background .15s,border-color .15s,color .15s}\n.st-btn:hover{border-color:var(--dsw-alias-border-l2,#d1d5db);background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}\n.st-btn.st-on{color:var(--dsw-alias-state-success-primary,#16a34a);border-color:var(--dsw-alias-state-success-primary,#16a34a)}\n.st-dot{width:7px;height:7px;border-radius:50%;flex:none}\n.st-table{width:100%;border-collapse:collapse;font-size:12px}\n.st-table td{padding:5px 6px;border-bottom:1px solid var(--dsw-alias-border-l1,#e5e7eb);vertical-align:top}\n.st-table tr:last-child td{border-bottom:none}\n.st-badge{display:inline-block;border:1px solid currentColor;border-radius:999px;padding:0 8px;font-size:11px;line-height:18px}\n.st-barrow{display:flex;align-items:center;gap:8px;margin-top:6px}\n.st-bar{height:6px;border-radius:999px;background:var(--dsw-alias-state-success-primary,#16a34a);flex:none;max-width:100%}'
 
 let styled = false
 function ensureStyles() {
@@ -325,23 +325,47 @@ export function apply(ctx) {
     const openState = React.useState(false)
     const open = openState[0], setOpen = openState[1]
     const T = function (k, v) { return tr(L, k, v) }
+    const wrapRef = React.useRef(null)
+    const panelRef = React.useRef(null)
+    React.useEffect(function () {
+      if (!open) return undefined
+      function onPointerDown(e) {
+        try {
+          if (!(e.target instanceof Node)) return
+          if (wrapRef.current && wrapRef.current.contains(e.target)) return
+          if (panelRef.current && panelRef.current.contains(e.target)) return
+          setOpen(false)
+        } catch (e2) { setOpen(false) }
+      }
+      function onKeyDown(e) { if (e.key === 'Escape') setOpen(false) }
+      document.addEventListener('pointerdown', onPointerDown, true)
+      document.addEventListener('keydown', onKeyDown)
+      return function () {
+        document.removeEventListener('pointerdown', onPointerDown, true)
+        document.removeEventListener('keydown', onKeyDown)
+      }
+    }, [open])
     if (!d) return null
     const t = d.totals || {}
     const cc = (d.compression && d.compression.count) || 0
     const ll = (d.compression && d.compression.losslessEncodes) || 0
-    // Compact pill: "save ~{n} tok"; click expands the compressed/lossless/
-    // request detail inline (click again to collapse). Hover title keeps the
-    // same detail. Clickable like the dsh-model-stats pill beside it.
-    const detail = T('stripCompressed', { n: fmtTok(cc) })
-      + (ll > 0 ? ' · ' + T('stripLossless', { n: ll }) : '')
-      + ' · ' + T('stripReqs', { n: fmtTok((t.requests || 0)) })
-    return h('div', { className: 'st-strip', 'data-composer-stats': true, title: detail, role: 'button', 'aria-expanded': open, onClick: function () { setOpen(!open) } },
-      h('span', null, 'save'),
-      h('b', null, '~' + fmtTok(t.avoidedTokens || 0)),
-      h('span', null, 'tok'),
-      open ? h('span', { className: 'st-detail' }, ' · ' + detail) : null)
+    return h('div', { className: 'st-strip-wrap', ref: wrapRef },
+      h('div', {
+        className: 'st-strip',
+        'data-composer-stats': true,
+        role: 'button',
+        'aria-expanded': open,
+        onClick: function () { setOpen(!open) },
+      },
+        h('span', null, 'save'),
+        h('b', null, '~' + fmtTok(t.avoidedTokens || 0)),
+        h('span', null, 'tok')),
+      open ? h('div', { className: 'st-detail-panel', ref: panelRef },
+        h('div', null, h('b', null, '~' + fmtTok(t.avoidedTokens || 0) + ' tok')),
+        h('div', null, T('stripCompressed', { n: fmtTok(cc) }) + (ll > 0 ? ' · ' + T('stripLossless', { n: ll }) : '')),
+        h('div', null, T('stripReqs', { n: fmtTok((t.requests || 0)) })),
+        h('div', null, T('up', { n: Math.round((d.uptimeSec || 0) / 60) }))) : null)
   }
-
   ctx.slots.inject('settings.section', function () {
     ctx.slots.register(
       { name: 'settings.section', id: 'save-token', order: 430, label: 'Token Saver' },
