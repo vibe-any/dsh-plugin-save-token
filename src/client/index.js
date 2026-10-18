@@ -327,11 +327,16 @@ export function apply(ctx) {
     const t = d.totals || {}
     const cc = (d.compression && d.compression.count) || 0
     const ll = (d.compression && d.compression.losslessEncodes) || 0
-    return h('div', { className: 'st-strip', 'data-composer-stats': true },
-      h('span', null, 'token-saver'),
-      h('span', null, h('b', null, T('stripAvoided', { n: fmtTok(t.avoidedTokens || 0) }))),
-      h('span', null, T('stripCompressed', { n: fmtTok(cc) }) + (ll > 0 ? T('stripLossless', { n: ll }) : '')),
-      h('span', null, T('stripReqs', { n: fmtTok((t.requests || 0)) })))
+    // Compact pill: just "save ~{n} tok". Compression/dedupe/lossless/request
+    // counts move to the hover title so the trigger stays as short as the
+    // dsh-model-stats pill beside it. Bilingual via existing STR keys.
+    const detail = T('stripCompressed', { n: fmtTok(cc) })
+      + (ll > 0 ? ' · ' + T('stripLossless', { n: ll }) : '')
+      + ' · ' + T('stripReqs', { n: fmtTok((t.requests || 0)) })
+    return h('div', { className: 'st-strip', 'data-composer-stats': true, title: detail },
+      h('span', null, 'save'),
+      h('b', null, '~' + fmtTok(t.avoidedTokens || 0)),
+      h('span', null, 'tok'))
   }
 
   ctx.slots.inject('settings.section', function () {
