@@ -18,7 +18,7 @@
 
 import { build } from 'esbuild'
 import { mkdir, readFile } from 'node:fs/promises'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const pkg = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'))
 const id = pkg.name
@@ -27,8 +27,8 @@ await mkdir(new URL('./lib/', import.meta.url), { recursive: true })
 
 // --- host half: self-contained ESM bundle ----------------------------------
 await build({
-  entryPoints: [new URL('./src/index.js', import.meta.url).pathname],
-  outfile: new URL('./lib/index.js', import.meta.url).pathname,
+  entryPoints: [fileURLToPath(new URL('./src/index.js', import.meta.url))],
+  outfile: fileURLToPath(new URL('./lib/index.js', import.meta.url)),
   bundle: true,
   format: 'esm',
   platform: 'node',
@@ -41,8 +41,8 @@ await build({
 
 // --- client half: CJS bundle with __ModuleLoader__ handshake ---------------
 await build({
-  entryPoints: [new URL('./src/client/index.js', import.meta.url).pathname],
-  outfile: new URL('./lib/client.js', import.meta.url).pathname,
+  entryPoints: [fileURLToPath(new URL('./src/client/index.js', import.meta.url))],
+  outfile: fileURLToPath(new URL('./lib/client.js', import.meta.url)),
   bundle: true,
   format: 'cjs',
   platform: 'browser',
@@ -75,7 +75,7 @@ if (!client.includes('require("react")') && !client.includes("require('react')")
 // external, so resolution failure here means the local pnpm closure lacks
 // it; that is expected outside a profile and skipped gracefully.
 try {
-  const host = await import(pathToFileURL(new URL('./lib/index.js', import.meta.url).pathname).href)
+  const host = await import(pathToFileURL(fileURLToPath(new URL('./lib/index.js', import.meta.url))).href)
   if (typeof host.apply !== 'function' || !Array.isArray(host.inject)) {
     throw new Error('host bundle is missing the plugin face (apply/inject)')
   }
