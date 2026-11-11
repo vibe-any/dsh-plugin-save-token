@@ -64,11 +64,16 @@
  */
 
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import fs from 'node:fs'
 import {
   utf8Bytes, estTokens, fmtInt,
   argsToString, dedupeFingerprint,
   buildCandidate, buildNotice, effectiveMinBytes
 } from './compress.js'
+import {
+  blankSession, parseStats, serializeStats, sessionList, ensureSessionCapacity,
+  markRows, toolRows, quarantineName, saveBackoffMs, MARKS_LIMIT, SESSIONS_MEMORY_LIMIT
+} from './stats.js'
 
 export const name = 'save-token'
 
@@ -124,6 +129,133 @@ export function apply(ctx, config) {
   var seq = 0
   var spillAvailable = null
   var lastSkip = ''
+
+  // ---- lifetime ledger: totals and per-session buckets survive restarts ----
+  var statsFile = (function () {
+    var home = process.env.DSH_HOME || (process.env.HOME ? process.env.HOME + '/.dsh' : '')
+    return home ? home + '/save-token-stats.json' : ''
+  })()
+  var statsSince = Date.now()
+  var statsLoaded = false
+  var statsDirty = false
+  var statsTimer = null
+  var statsFailures = 0
+  var statsRetryAt = 0
+  var run = { startAt: Date.now(), requests: 0, aux: 0, avoided: 0, comp: 0 }
+  var sessionStats = new Map()
+
+  function sessionBucket(sid) {
+    var bucket = sessionStats.get(sid)
+    if (bucket !== undefined) return bucket
+    ensureSessionCapacity(sessionStats, SESSIONS_MEMORY_LIMIT)
+    bucket = blankSession(Date.now())
+    bucket.lastAt = bucket.firstAt
+    sessionStats.set(sid, bucket)
+    return bucket
+  }
+  function bumpSession(sid, rec, avoided) {
+    if (sid === undefined || sid === null || sid === '') return
+    var bucket = sessionBucket(String(sid))
+    if (rec.kind === 'aux') bucket.aux++
+    else bucket.requests++
+    bucket.avoided += avoided
+    bucket.input += rec.input
+    bucket.cached += rec.cached
+    bucket.output += rec.output
+    bucket.lastAt = rec.ts
+  }
+  function bumpSessionComp(sid, lossless) {
+    if (sid === undefined || sid === null || sid === '') return
+    var bucket = sessionBucket(String(sid))
+    bucket.comp++
+    if (lossless) bucket.lossless++
+    bucket.lastAt = Date.now()
+  }
+  function quarantineStats(error) {
+    var target = quarantineName(statsFile, Date.now())
+    try {
+      fs.renameSync(statsFile, target)
+      console.error('save-token: stats file unusable (' + String((error && error.message) || error) + '), moved to ' + target)
+    } catch (moveError) {
+      console.error('save-token: stats load failed (' + String((error && error.message) || error) + ') and quarantine failed: ' + String((moveError && moveError.message) || moveError))
+    }
+  }
+  function loadStats() {
+    if (!statsFile) return
+    var text
+    try {
+      text = fs.readFileSync(statsFile, 'utf8')
+    } catch (readError) {
+      if (readError && readError.code === 'ENOENT') return
+      quarantineStats(readError)
+      return
+    }
+    try {
+      var parsed = parseStats(text, { totals: Object.keys(totals), compression: Object.keys(comp) })
+      if (parsed.since > 0) statsSince = parsed.since
+      for (var totalKey in parsed.totals) totals[totalKey] = parsed.totals[totalKey]
+      for (var compKey in parsed.compression) comp[compKey] = parsed.compression[compKey]
+      for (var sessionIndex = 0; sessionIndex < parsed.sessions.length; sessionIndex++) {
+        var row = parsed.sessions[sessionIndex]
+        var bucket = blankSession(row.firstAt)
+        for (var field in bucket) if (typeof row[field] === 'number') bucket[field] = row[field]
+        sessionStats.set(row.id, bucket)
+      }
+      for (var markIndex = 0; markIndex < parsed.marks.length; markIndex++) {
+        var mark = parsed.marks[markIndex]
+        compressedIndex.set(mark[0], { o: mark[1], k: mark[2], ts: mark[3] })
+      }
+      for (var toolIndex = 0; toolIndex < parsed.tools.length; toolIndex++) {
+        var tool = parsed.tools[toolIndex]
+        byTool.set(tool[0], { count: tool[1], savedBytes: tool[2] })
+      }
+      statsLoaded = true
+    } catch (parseError) {
+      quarantineStats(parseError)
+    }
+  }
+  function flushStats() {
+    if (statsTimer) { clearTimeout(statsTimer); statsTimer = null }
+    if (!statsFile) return
+    if (Date.now() < statsRetryAt) return
+    try {
+      var body = JSON.stringify(serializeStats({
+        since: statsSince,
+        now: Date.now(),
+        totals: totals,
+        compression: comp,
+        sessions: sessionStats,
+        marks: markRows(compressedIndex, MARKS_LIMIT),
+        tools: toolRows(byTool)
+      }))
+      fs.writeFileSync(statsFile + '.tmp', body)
+      fs.renameSync(statsFile + '.tmp', statsFile)
+      statsDirty = false
+      statsFailures = 0
+      statsRetryAt = 0
+    } catch (writeError) {
+      statsFailures++
+      var wait = saveBackoffMs(statsFailures)
+      statsRetryAt = Date.now() + wait
+      if (statsFailures === 1 || statsFailures % 30 === 0) {
+        console.error('save-token: stats save failed (' + statsFailures + 'x, retry in ' + Math.round(wait / 1000) + 's): ' + String((writeError && writeError.message) || writeError))
+      }
+    }
+  }
+  function scheduleSave() {
+    statsDirty = true
+    if (statsTimer || !statsFile) return
+    var delay = 5000
+    var blocked = statsRetryAt - Date.now()
+    if (blocked > delay) delay = blocked
+    statsTimer = setTimeout(function () {
+      statsTimer = null
+      if (statsDirty) flushStats()
+    }, delay)
+    if (statsTimer.unref) statsTimer.unref()
+  }
+  loadStats()
+  try { process.once('exit', function () { if (statsDirty) flushStats() }) } catch (error) {}
 
   // ---------- online token-estimate calibration (D1) ----------
   // Every request yields real billed input alongside this plugin's heuristic
@@ -312,6 +444,9 @@ export function apply(ctx, config) {
     if (cand.lossless) comp.losslessEncodes++
     if (cand.strategy === 'lines-strided') comp.tabularWindows++
     comp.count++; comp.bytesBefore += cand.before; comp.bytesAfter += cand.after
+    run.comp++
+    bumpSessionComp(sessionId, cand.lossless)
+    scheduleSave()
     var verbose = comp.count <= cfg.noticeFullTrailerCount
     var finalText = buildNotice({
       body: cand.text,
@@ -411,6 +546,11 @@ export function apply(ctx, config) {
       // avoided accounting is calibrated by the model's observed est/actual ratio
       totals.avoidedTokens += Math.round(rec.avoided * ratio)
       totals.estPromptTokens += rec.estPrompt
+      var avoidedThis = Math.round(rec.avoided * ratio)
+      if (rec.kind === 'aux') run.aux++; else run.requests++
+      run.avoided += avoidedThis
+      bumpSession(fullSid, rec, avoidedThis)
+      scheduleSave()
       comp.replays += rec.replayHits
       records.push(rec)
       if (records.length > 480) records.splice(0, records.length - 400)
@@ -550,6 +690,12 @@ export function apply(ctx, config) {
       spillReady: spillAvailable,
       lastSkip: lastSkip,
       totals: totals,
+      run: run,
+      scope: {
+        since: statsSince,
+        persisted: statsLoaded,
+        sessions: sessionList(sessionStats, 20)
+      },
       reliefPct: (billedInput + totals.avoidedTokens) > 0 ? Math.round(totals.avoidedTokens * 100 / (billedInput + totals.avoidedTokens)) : 0,
       // cache-health sentinel: most input rides provider prompt cache (bench:
       // 88.9% cache-read at 1/30 price), so any change that tanks this number
@@ -586,6 +732,13 @@ export function apply(ctx, config) {
     comp.topLevelCalls = 0; comp.nestedCalls = 0
     compactStats.attempts = 0; compactStats.done = 0; compactStats.skipped = 0
     records.length = 0; recent.length = 0; byTool.clear(); compressedIndex.clear(); dedupeCache.clear(); originals.clear()
+    sessionStats.clear()
+    run.startAt = Date.now()
+    run.requests = 0; run.aux = 0; run.avoided = 0; run.comp = 0
+    statsSince = Date.now()
+    statsLoaded = true
+    try { if (statsFile) fs.unlinkSync(statsFile) } catch (error) {}
+    flushStats()
     startedAt = Date.now()
     return { ok: true }
   }

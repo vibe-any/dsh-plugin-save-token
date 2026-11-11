@@ -54,6 +54,13 @@ At each reasoning-step boundary, check the session's most recent actual context 
 ### 8. Full-chain metering + dual-panel dashboard
 Every `llm/stream` is intercepted: real billed tokens (input/cached/output/reasoning) and "tokens avoided from context" are accounted separately. Historical messages are scanned for `[save-token #id]` markers to total savings (including multi-turn replays). The Settings page hosts a full panel (KPIs, per-request stacked chart, top-tools leaderboard, activity feed), plus a persistent live strip under the input box.
 
+### 9. Durable ledger: survives restarts, readable per session
+Totals no longer live only inside the host process. Lifetime totals, one bucket per session, the compressed-marker index and the top-tools table are written (debounced) to `$DSH_HOME/save-token-stats.json` (default `~/.dsh/save-token-stats.json`) and loaded back on the next start — so "lifetime" means lifetime, not "since this process booted". Three details:
+
+- **Reset** clears both memory and file; a **corrupt ledger is never overwritten silently** — it is renamed to `*.corrupt-<ts>` and quarantined before a fresh one is built (the ledger is the only record of past savings).
+- One new switch in the Settings toolbar: **`Scope: totals / session`**, deciding what the dock strip shows (kept in browser localStorage). Totals mode shows lifetime figures plus this run; session mode is trimmed to `this session ~{n} tok · {n} reqs · {n} comp`, with the session id and the lifetime figure moved into the tooltip. The panel KPIs stay lifetime and a per-session table sits below them. The session id comes from the session-scoped slot's `props.sessionId`, then from the `uiSession` service; when neither resolves, the UI says so instead of guessing — a wrong id would attribute another conversation's numbers to this one.
+- The **compressed-marker index is persisted too**, so markers already sitting in context still convert back into avoided tokens after a restart instead of being permanently under-counted. Write failures back off exponentially (2s → … → 2min) and log once, rather than printing a line every flush period.
+
 ---
 
 ## Measured results
@@ -207,8 +214,9 @@ dsh-plugin-save-token/
 ├── src/
 │   ├── index.js          ← Host half: waterfall hooks / orchestration / tool registration / API routes
 │   ├── compress.js       ← pure compression brain (estimators, TOON tabular, gates, notices)
+│   ├── stats.js          ← pure ledger helpers (file shape, caps, quarantine naming, retry backoff)
 │   └── client/index.js   ← Client half: Dashboard panel + input-box live strip
-├── test/                 ← node --test unit suite pinning the compression brain
+├── test/                 ← node --test suite: compression brain + ledger data path
 └── lib/                  ← built artifacts (committed, so git installs need no build step)
     ├── index.js          ← bundled ESM host half (node)
     └── client.js         ← bundled client half wrapped in window.__ModuleLoader__.load({ id, factory })
