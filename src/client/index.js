@@ -44,7 +44,7 @@ const STR = {
     kpiRequests: 'Model requests', kpiRequestsSub: '+{n} aux (title/compaction)',
     kpiIn: 'Input tokens (actual)', kpiInSub: 'cache hit {p}% · {n} cached',
     kpiOut: 'Output tokens (actual)', kpiOutSub: '{n} reasoning',
-    kpiAvoided: 'Tokens avoided (est)', kpiAvoidedSub: '~{p}% lighter context per call avg',
+    kpiAvoided: 'Tokens avoided (lifetime, est)', kpiAvoidedSub: '~{p}% lighter context per call avg',
     chartTitle: 'Per-request context weight — gray = sent prompt, green = avoided',
     noRequests: 'no requests yet',
     chartSub: 'avg prompt ~{a} tok | avg avoided ~{b} tok/request',
@@ -55,7 +55,15 @@ const STR = {
     topTools: 'Top tools by bytes kept out', topToolsEmpty: 'nothing compressed yet',
     recent: 'Recent activity',
     footer: 'Lossless-first: uniform JSON arrays are re-encoded deterministically (TOON-style) with zero information loss; regular outputs get structure-aware windows with line-numbered stride samples. Every replacement stays retrievable via the save_token_expand tool or the stored locator.',
-    stripAvoided: 'saved ~{n} tok', stripCompressed: '{n} compressed', stripLossless: ' ({n} lossless)', stripReqs: '{n} reqs',
+    stripAvoided: 'lifetime ~{n} tok saved', stripCompressed: '{n} compressed', stripLossless: ' ({n} lossless)', stripReqs: '{n} reqs',
+    stripRun2: 'this run {r} reqs · {c} comp · ~{n} tok', sessionsTitle: 'By session',
+    sessionsSince: 'since {d}', sessionsEmpty: 'no session activity yet',
+    scopeLifetime: 'lifetime', scopeSession: 'this session',
+    toggleScope: 'Scope', scopeSummary: 'totals',
+    scopeHint: 'What the dock strip shows: lifetime totals or the current session',
+    stripSessionAvoided: 'this session ~{n} tok', stripSessionReqs: '{n} reqs', stripSessionComp: '{n} comp',
+    stripUnresolved: 'session id unavailable', stripLifetimeHint: 'lifetime ~{n} tok',
+    scopeCurrent: 'detected session: {id}',
     kindCompress: 'compressed', kindLossless: 'lossless', kindDedupe: 'deduped', kindRequest: 'request',
     kindAux: 'aux-call', kindSkip: 'skipped', kindConfig: 'config', kindCompact: 'compaction',
   },
@@ -72,7 +80,7 @@ const STR = {
     kpiRequests: '模型请求', kpiRequestsSub: '+{n} 辅助（标题/compaction）',
     kpiIn: '输入 token（实际）', kpiInSub: '缓存命中 {p}% · 含 {n} 缓存',
     kpiOut: '输出 token（实际）', kpiOutSub: '{n} 推理',
-    kpiAvoided: '节省 token（估算）', kpiAvoidedSub: '单次调用平均减轻 ~{p}% 上下文',
+    kpiAvoided: '累计节省 token（估算）', kpiAvoidedSub: '单次调用平均减轻 ~{p}% 上下文',
     chartTitle: '单次请求上下文重量——灰 = 发送的提示词,绿 = 已节省',
     noRequests: '暂无请求',
     chartSub: '平均提示 ~{a} tok | 平均节省 ~{b} tok/次',
@@ -83,7 +91,15 @@ const STR = {
     topTools: '节省字节最多的工具', topToolsEmpty: '还没有压缩记录',
     recent: '近期活动',
     footer: '无损优先:均匀 JSON 数组确定性重编码(TOON 式),零信息损失;常规输出走结构感知窗口,中段按行号抽采样。每次替换都可经 save_token_expand 工具或存储定位器一步取回。',
-    stripAvoided: '节省 ~{n} tok', stripCompressed: '压缩 {n} 次', stripLossless: '({n} 无损)', stripReqs: '{n} 次请求',
+    stripAvoided: '累计节省 ~{n} tok', stripCompressed: '压缩 {n} 次', stripLossless: '({n} 无损)', stripReqs: '{n} 次请求',
+    stripRun2: '本次运行 {r} 请求 · {c} 压缩 · ~{n} tok', sessionsTitle: '按会话统计',
+    sessionsSince: '自 {d} 起', sessionsEmpty: '暂无会话活动',
+    scopeLifetime: '累计', scopeSession: '本会话',
+    toggleScope: '口径', scopeSummary: '汇总',
+    scopeHint: '下边那条显示什么：累计汇总 / 本会话',
+    stripSessionAvoided: '本会话 ~{n} tok', stripSessionReqs: '{n} 请求', stripSessionComp: '{n} 压缩',
+    stripUnresolved: '未识别当前会话', stripLifetimeHint: '累计 ~{n} tok',
+    scopeCurrent: '已识别当前会话：{id}',
     kindCompress: '压缩', kindLossless: '无损', kindDedupe: '去重', kindRequest: '请求',
     kindAux: '辅助', kindSkip: '跳过', kindConfig: '配置', kindCompact: 'compaction',
   },
@@ -125,6 +141,97 @@ async function apiPost(action, body) {
 }
 
 export function apply(ctx) {
+
+  // ---- scope switch: lifetime totals vs. the current session ----
+  const SCOPE_KEY = 'save-token:scope'
+  function readScope() {
+    try {
+      return localStorage.getItem(SCOPE_KEY) === 'session' ? 'session' : 'lifetime'
+    } catch (e) {
+      return 'lifetime'
+    }
+  }
+  function writeScope(v) {
+    try {
+      localStorage.setItem(SCOPE_KEY, v === 'session' ? 'session' : 'lifetime')
+    } catch (e) {
+    }
+  }
+  function uiSessionOf() {
+    try {
+      return ctx && typeof ctx.get === 'function' ? ctx.get('uiSession') : undefined
+    } catch (e) {
+      return undefined
+    }
+  }
+  /**
+   * Session id for this dock: the slot host passes every session-scoped slot the
+   * scope's `props: ['sessionId']` contribution. The `uiSession` fallback covers
+   * hosts that do not spread it; when both miss we say so instead of guessing
+   * (a wrong id would show another conversation's numbers).
+   */
+  function resolveSessionId(props) {
+    var p = props || {}
+    var direct = p.sessionId || (p.session && p.session.id) || (p.binding && p.binding.props && p.binding.props.sessionId)
+    if (typeof direct === 'string' && direct) return direct
+    try {
+      var svc = uiSessionOf()
+      var snap = svc && svc.current && typeof svc.current.getSnapshot === 'function' ? svc.current.getSnapshot() : null
+      var v = snap && ((snap.props && snap.props.sessionId) || snap.sessionId)
+      if (typeof v === 'string' && v) return v
+    } catch (e) {
+    }
+    return undefined
+  }
+  function scopeMetrics(T, d, mode, cur) {
+    var t = d.totals || {}
+    var c = d.compression || {}
+    if (mode === 'session') {
+      if (!cur) return [T('stripUnresolved')]
+      return [
+        T('stripSessionAvoided', { n: fmtTok(cur.avoided || 0) }),
+        T('stripSessionReqs', { n: fmtTok(cur.requests || 0) }),
+        T('stripSessionComp', { n: fmtTok(cur.comp || 0) })
+      ]
+    }
+    var run = d.run || {}
+    return [
+      T('stripAvoided', { n: fmtTok(t.avoidedTokens || 0) }),
+      T('stripRun2', { r: fmtTok(run.requests || 0), c: fmtTok(run.comp || 0), n: fmtTok(run.avoided || 0) }),
+      T('stripCompressed', { n: fmtTok(c.count || 0) }) + ((c.losslessEncodes || 0) > 0 ? T('stripLossless', { n: c.losslessEncodes }) : ''),
+      T('stripReqs', { n: fmtTok(t.requests || 0) })
+    ]
+  }
+  function stripTitle(T, d, mode, cur, metrics) {
+    var t = d.totals || {}
+    var head = 'Token Saver'
+    if (mode === 'session') {
+      if (cur) head += ' · ' + cur.tail
+    } else {
+      head += ' · ' + T('scopeLifetime')
+    }
+    var parts = [head].concat(metrics)
+    if (mode === 'session') parts.push(T('stripLifetimeHint', { n: fmtTok(t.avoidedTokens || 0) }))
+    parts.push(T('scopeHint'))
+    return parts.join(' · ')
+  }
+  function renderSessionCard(h, T, L, d, curId) {
+    var list = (d.scope && d.scope.sessions) || []
+    var since = d.scope && d.scope.since ? ' · ' + T('sessionsSince', { d: new Date(d.scope.since).toLocaleDateString() }) : ''
+    return h('div', { className: 'st-card' },
+      h('div', { className: 'st-title' }, T('sessionsTitle') + since),
+      h('div', { className: 'st-s st-dim' }, curId ? T('scopeCurrent', { id: curId.slice(-8) }) : T('stripUnresolved')),
+      list.length === 0
+        ? h('div', { className: 'st-dim', style: { marginTop: 8 } }, T('sessionsEmpty'))
+        : h('table', { className: 'st-table' }, h('tbody', null, list.map(function (s) {
+            return h('tr', { key: s.id },
+              h('td', { className: 'st-dim' }, (curId && s.id === curId ? '\u25b6 ' : '') + s.tail),
+              h('td', { style: { textAlign: 'right' } }, fmtTok(s.requests || 0)),
+              h('td', { className: 'st-green', style: { textAlign: 'right' } }, s.avoided > 0 ? '-' + fmtTok(s.avoided) : ''),
+              h('td', { style: { textAlign: 'right' } }, String(s.comp || 0)),
+              h('td', { className: 'st-dim', style: { textAlign: 'right' } }, s.lastAt ? fmtTime(s.lastAt, L) : ''))
+          }))))
+  }
   ensureStyles()
   const h = React.createElement
 
@@ -237,6 +344,8 @@ export function apply(ctx) {
     const d = ud[0], refresh = ud[1]
     const L = useLocale()
     const T = function (k, v) { return tr(L, k, v) }
+    // local re-render only: never blank the panel just to flip a display switch
+    const scopeRev = React.useState(0)
     if (!d) return h('div', { className: 'st-dim' }, T('loading'))
     const t = d.totals || {}
     const c = d.compression || {}
@@ -246,6 +355,7 @@ export function apply(ctx) {
     const ratio = c.bytesBefore > 0 ? Math.round((1 - c.bytesAfter / c.bytesBefore) * 100) : 0
     let maxSaved = 1
     for (let i = 0; i < (d.byTool || []).length; i++) maxSaved = Math.max(maxSaved, d.byTool[i].savedBytes)
+    const curId = resolveSessionId({})
     return h('div', { className: 'st-wrap' },
       h('div', { className: 'st-row' },
         h('span', { style: { fontWeight: 650, fontSize: 15 } }, 'Token Saver v2'),
@@ -260,7 +370,12 @@ export function apply(ctx) {
         h('button', {
           className: 'st-btn',
           onClick: async function () { try { await apiPost('reset', {}); refresh() } catch (e) { console.error(e) } }
-        }, T('reset'))),
+        }, T('reset')),
+        h('button', {
+          className: 'st-btn',
+          title: T('scopeHint'),
+          onClick: function () { writeScope(readScope() === 'session' ? 'lifetime' : 'session'); scopeRev[1](scopeRev[0] + 1) }
+        }, T('toggleScope') + ': ' + T(readScope() === 'session' ? 'scopeSession' : 'scopeSummary'))),
       d.spillReady === false
         ? h('div', { className: 'st-card', style: { borderColor: 'var(--dsw-alias-state-error-primary,#b91c1c)' } },
             h('span', { className: 'st-dim' }, T('spillWarn')),
@@ -318,6 +433,7 @@ export function apply(ctx) {
             h('td', { className: 'st-dim' }, r.detail),
             h('td', { className: 'st-green', style: { textAlign: 'right' } }, r.saved > 0 ? '-' + fmtTok(r.saved) : ''))
         })))),
+      renderSessionCard(h, T, L, d, curId),
       h('div', { className: 'st-s st-dim' },
         T('footer')))
   }
@@ -336,7 +452,7 @@ export function apply(ctx) {
    * row grants it. Everything dropped stays in the title tooltip and in
    * Settings -> Token Saver.
    */
-  function Strip() {
+  function Strip(props) {
     const ud = useDashboard(4000)
     const d = ud[0]
     const L = useLocale()
@@ -393,11 +509,12 @@ export function apply(ctx) {
     const t = d.totals || {}
     const cc = (d.compression && d.compression.count) || 0
     const ll = (d.compression && d.compression.losslessEncodes) || 0
-    const metrics = [
-      T('stripAvoided', { n: fmtTok(t.avoidedTokens || 0) }),
-      T('stripCompressed', { n: fmtTok(cc) }) + (ll > 0 ? T('stripLossless', { n: ll }) : ''),
-      T('stripReqs', { n: fmtTok(t.requests || 0) }),
-    ]
+    const mode = readScope()
+    const sids = (d.scope && d.scope.sessions) || []
+    const sid = resolveSessionId(props)
+    let cur = null
+    for (let i = 0; i < sids.length; i++) { if (sid && sids[i].id === sid) cur = sids[i] }
+    const metrics = scopeMetrics(T, d, mode, cur)
     const kids = [
       h('svg', { key: 'icon', viewBox: '0 0 16 16', width: 14, height: 14, 'aria-hidden': true, focusable: false },
         h('ellipse', { key: 'top', cx: 8, cy: 4.1, rx: 5.1, ry: 2.1 }),
@@ -411,7 +528,7 @@ export function apply(ctx) {
     // Last tier: not even the lead figure fits. Let that one clip itself with an
     // ellipsis instead of the row cutting it off mid-glyph.
     const cls = 'st-strip' + (hidden >= 2 ? ' st-strip-tight' : '')
-    return h('div', { className: cls, ref: rootRef, title: 'Token Saver · ' + metrics.join(' · ') }, kids)
+    return h('div', { className: cls, ref: rootRef, title: stripTitle(T, d, mode, cur, metrics) }, kids)
   }
 
   ctx.slots.inject('settings.section', function () {
@@ -422,6 +539,6 @@ export function apply(ctx) {
   ctx.slots.inject('conversation.composer.dock', function () {
     ctx.slots.register(
       { name: 'conversation.composer.dock', id: 'save-token-strip', order: 85 },
-      function () { return h(Strip) })
+      function (props) { return h(Strip, props) })
   })
 }

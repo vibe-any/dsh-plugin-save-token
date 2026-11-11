@@ -54,6 +54,13 @@
 ### 8. 全链路计量 + 双面板 Dashboard
 拦截每一次 `llm/stream`：真实计费 token（input/cached/output/reasoning）与"避免进入上下文的 token"分开记账；扫描历史消息中的 `[save-token #id]` 标记统计节省量（含多轮重放）。Settings 页有完整面板（KPI、逐请求堆叠图、Top 工具榜、活动流），输入框下方有一条常驻实时摘要。
 
+### 9. 持久台账：重启不清零 + 按会话读数
+统计不再只活在宿主进程里。总量、按会话分桶、压缩标记索引与 Top 工具榜会防抖落盘到 `$DSH_HOME/save-token-stats.json`（默认 `~/.dsh/save-token-stats.json`），重启后接着算——面板上的「累计」才是真的累计，而不是"这次跑到现在"。三处细节：
+
+- **重置**同时清内存与文件；**坏文件不会被静默覆盖**，而是改名成 `*.corrupt-<时间戳>` 隔离后重建（台账是历史节省的唯一记录，宁可再生也不静默清零）。
+- Settings 工具栏上新增**一个**开关：**「口径：汇总 / 本会话」**，只决定输入框那条显示什么（选择存在浏览器 localStorage）。累计态看总量与本次运行，本会话态只留「本会话 ~X tok · N 请求 · M 压缩」三段，会话 id 与累计量收进 tooltip；面板的 KPI 始终是累计，另有一张按会话统计的表。会话 id 取自会话作用域 slot 的 `props.sessionId`，再退回 `uiSession` 服务；两者都拿不到时如实显示「未识别当前会话」，不猜——猜错会把别的会话的数字挂到当前会话上。
+- **压缩标记索引一并落盘**，所以重启后上下文里的旧标记仍能换算回节省量，不会因为一次重启就永久低估。写盘失败会指数退避（2s→…→2min）并只告警一次，避免每 3 秒刷一行日志。
+
 ---
 
 ## 实测效果
@@ -201,8 +208,9 @@ dsh-plugin-save-token/
 ├── src/
 │   ├── index.js        ← Host 半：瀑布挂接 / 编排 / 工具注册 / API 路由
 │   ├── compress.js     ← 纯函数压缩核心（估算器 / TOON 表化 / 双门控 / 通知）
+│   ├── stats.js        ← 台账纯函数（文件形状 / 上限 / 隔离命名 / 退避）
 │   └── client/index.js ← Client 半：Dashboard 面板 + 输入框实时条
-├── test/               ← node --test 单元测试，钉住压缩核心行为
+├── test/               ← node --test 单元测试：压缩核心 + 台账数据路径
 └── lib/                ← 构建产物（入库提交，git 安装免构建）
     ├── index.js        ← 打包后的 ESM host 半（node）
     └── client.js       ← 打包后的 client 半（window.__ModuleLoader__.load({ id, factory }) 包装）
